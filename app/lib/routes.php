@@ -1,0 +1,545 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/app_config.php';
+
+function app_route_manifest(): array
+{
+    static $manifest = null;
+    if (is_array($manifest)) {
+        return $manifest;
+    }
+
+    $phase2 = defined('FEATURE_PHASE2B_READONLY') && FEATURE_PHASE2B_READONLY;
+    $phase3 = defined('FEATURE_PHASE3_OPS') && FEATURE_PHASE3_OPS;
+
+    $manifest = [
+        'landing' => [
+            'label' => 'Home',
+            'section' => 'Console',
+            'nav_section' => 'console',
+            'view' => __DIR__ . '/../views/landing.php',
+            'scripts' => ['assets/js/pages/landing_page.js'],
+        ],
+        'samples' => [
+            'label' => 'Samples',
+            'section' => 'Malware Catalog',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/samples.php',
+        ],
+        'sample' => [
+            'label' => 'Sample Detail',
+            'section' => 'Malware Catalog',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/sample_detail.php',
+            'aliases' => ['sample_detail'],
+        ],
+        'family_taxonomy_check' => [
+            'label' => 'Taxonomy Workspace',
+            'section' => 'Taxonomy & Repair',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/family_taxonomy_check.php',
+            'scripts' => ['assets/js/family_taxonomy_shared.js', 'assets/js/pages/family_taxonomy_check_page.js'],
+            'aliases' => ['taxonomy_overview'],
+        ],
+        'family_taxonomy_gaps' => [
+            'label' => 'Coverage & Gaps',
+            'section' => 'Taxonomy & Repair',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/family_taxonomy_gaps.php',
+            'aliases' => ['taxonomy_coverage', 'taxonomy_coverage_gaps', 'taxonomy_gaps'],
+        ],
+        'family_taxonomy_queue' => [
+            'label' => 'Repair Queue',
+            'section' => 'Taxonomy & Repair',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/family_taxonomy_queue.php',
+            'scripts' => ['assets/js/family_taxonomy_shared.js', 'assets/js/pages/family_taxonomy_queue_page.js'],
+            'aliases' => ['taxonomy_repairs', 'taxonomy_repair_queue'],
+        ],
+        'family_taxonomy_repair_planning' => [
+            'label' => 'Repair Planning',
+            'section' => 'Taxonomy & Repair',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/family_taxonomy_repair_planning.php',
+            'scripts' => ['assets/js/pages/family_taxonomy_repair_planning_page.js'],
+            'nav_hidden' => true,
+        ],
+        'family_taxonomy_conflicts' => [
+            'label' => 'Conflicts & Governance',
+            'section' => 'Taxonomy & Repair',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/family_taxonomy_conflicts.php',
+            'aliases' => ['taxonomy_conflicts', 'taxonomy_governance'],
+        ],
+        'family_taxonomy_signal_hygiene' => [
+            'label' => 'Signal Hygiene',
+            'section' => 'Taxonomy & Repair',
+            'nav_section' => 'malware',
+            'view' => __DIR__ . '/../views/family_taxonomy_signal_hygiene.php',
+            'aliases' => ['taxonomy_signal_hygiene'],
+        ],
+        'dataset_readiness' => [
+            'label' => 'Dataset Readiness',
+            'section' => 'Dataset Curation',
+            'nav_section' => 'dataset',
+            'view' => __DIR__ . '/../views/dataset_readiness.php',
+        ],
+        'label_surfaces' => [
+            'label' => 'Label Surfaces',
+            'section' => 'Dataset Curation',
+            'nav_section' => 'dataset',
+            'view' => __DIR__ . '/../views/label_surfaces.php',
+        ],
+        'type_benchmark' => [
+            'label' => 'Type Benchmark',
+            'section' => 'Dataset Curation',
+            'nav_section' => 'dataset',
+            'view' => __DIR__ . '/../views/type_benchmark.php',
+        ],
+        'authority_consistency_debt' => [
+            'label' => 'Authority Consistency Debt',
+            'section' => 'Dataset Curation',
+            'nav_section' => 'dataset',
+            'view' => __DIR__ . '/../views/authority_consistency_debt.php',
+        ],
+        'dataset_exports' => [
+            'label' => 'Export Readiness',
+            'section' => 'Dataset Curation',
+            'nav_section' => 'dataset',
+            'view' => __DIR__ . '/../views/dataset_exports.php',
+            'nav_hidden' => true,
+        ],
+        'check_hash' => [
+            'label' => 'Check Hash',
+            'section' => 'Artifact Intake',
+            'nav_section' => 'intake',
+            'view' => __DIR__ . '/../views/check_hash.php',
+            'scripts' => ['assets/js/pages/check_hash_page.js'],
+            'aliases' => ['artifact_intake_lookup'],
+        ],
+        'ingest_backlog' => [
+            'label' => 'Ingest Backlog',
+            'section' => 'Artifact Intake',
+            'nav_section' => 'intake',
+            'view' => __DIR__ . '/../views/ingest_backlog.php',
+            'aliases' => ['artifact_intake_backlog'],
+        ],
+        'submit_artifact' => [
+            'label' => 'Submit Artifact',
+            'section' => 'Artifact Intake',
+            'nav_section' => 'intake',
+            'view' => __DIR__ . '/../views/submit_artifact.php',
+            'scripts' => ['assets/js/pages/submit_artifact_page.js'],
+            'aliases' => ['artifact_intake_submit'],
+        ],
+        'permissions_overview' => [
+            'label' => 'Permission Overview',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_overview.php',
+        ],
+        'analysis_fusion' => [
+            'label' => 'Analysis Fusion',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/analysis_fusion.php',
+            'enabled' => $phase2,
+        ],
+        'permissions_drift' => [
+            'label' => 'Permission Drift',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_drift.php',
+        ],
+        'permissions_triage' => [
+            'label' => 'Permission Triage',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_triage.php',
+        ],
+        'permissions_queue' => [
+            'label' => 'Permission Queue',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_queue.php',
+            'enabled' => $phase2,
+        ],
+        'permissions_evidence' => [
+            'label' => 'Permission Evidence',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_evidence.php',
+        ],
+        'permissions_aosp' => [
+            'label' => 'AOSP Permissions',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_aosp.php',
+            'nav_hidden' => true,
+        ],
+        'permissions_google' => [
+            'label' => 'Google Permissions',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_google.php',
+            'nav_hidden' => true,
+        ],
+        'permissions_oem_registry' => [
+            'label' => 'OEM Registry',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_oem_registry.php',
+            'nav_hidden' => true,
+        ],
+        'permissions_oem_permissions' => [
+            'label' => 'OEM Permissions',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_oem_permissions.php',
+            'nav_hidden' => true,
+        ],
+        'permissions_review' => [
+            'label' => 'Permission Review',
+            'section' => 'Permission Intel',
+            'nav_section' => 'permissions',
+            'view' => __DIR__ . '/../views/permissions_review.php',
+        ],
+        'health' => [
+            'label' => 'VT & Pipeline Health',
+            'section' => 'VT Pipeline',
+            'nav_section' => 'pipeline',
+            'view' => __DIR__ . '/../views/health.php',
+            'scripts' => ['assets/js/pages/health_page.js'],
+            'aliases' => ['vt_key_status'],
+        ],
+        'runs' => [
+            'label' => 'Run Ledger',
+            'section' => 'VT Pipeline',
+            'nav_section' => 'pipeline',
+            'view' => __DIR__ . '/../views/runs.php',
+            'nav_hidden' => true,
+        ],
+        'vt_snapshot_inventory' => [
+            'label' => 'VT Snapshot Inventory',
+            'section' => 'VT Pipeline',
+            'nav_section' => 'pipeline',
+            'view' => __DIR__ . '/../views/vt_snapshot_inventory.php',
+            'nav_hidden' => true,
+        ],
+        'vt_confidence' => [
+            'label' => 'VT Confidence',
+            'section' => 'VT Pipeline',
+            'nav_section' => 'pipeline',
+            'view' => __DIR__ . '/../views/vt_confidence.php',
+            'enabled' => $phase2,
+        ],
+        'vt_ops_dashboard' => [
+            'label' => 'VT Ops Dashboard',
+            'section' => 'VT Pipeline',
+            'nav_section' => 'pipeline',
+            'view' => __DIR__ . '/../views/vt_ops_dashboard.php',
+            'aliases' => ['phase3_ops_dashboard', 'vt_apply_audit_history', 'phase3_audit_history', 'vt_evidence_packs', 'phase3_evidence_packs'],
+        ],
+        'settings' => [
+            'label' => 'Settings',
+            'section' => 'Platform',
+            'nav_section' => 'admin',
+            'view' => __DIR__ . '/../views/settings.php',
+        ],
+        'schema_inventory' => [
+            'label' => 'Schema Inventory',
+            'section' => 'Platform',
+            'nav_section' => 'admin',
+            'view' => __DIR__ . '/../views/schema_inventory.php',
+            'nav_hidden' => true,
+        ],
+        'stack_audit' => [
+            'label' => 'Tech Stack Audit',
+            'section' => 'Platform',
+            'nav_section' => 'admin',
+            'view' => __DIR__ . '/../views/stack_audit.php',
+            'scripts' => ['assets/js/pages/stack_audit_page.js'],
+            'nav_hidden' => true,
+        ],
+        'admin_diagnostics' => [
+            'label' => 'Admin Diagnostics',
+            'section' => 'Platform',
+            'nav_section' => 'admin',
+            'view' => __DIR__ . '/../views/admin_diagnostics.php',
+            'enabled' => $phase3,
+            'aliases' => ['admin_smoke'],
+        ],
+        'vt_key_controls' => [
+            'label' => 'VT Key Drilldown',
+            'section' => 'VT Pipeline',
+            'nav_section' => 'pipeline',
+            'view' => __DIR__ . '/../views/vt_key_controls.php',
+            'aliases' => ['vt_key_ops'],
+        ],
+    ];
+
+    return $manifest;
+}
+
+function app_route_is_enabled(array $meta): bool
+{
+    return !array_key_exists('enabled', $meta) || $meta['enabled'] === true;
+}
+
+function app_route_catalog(): array
+{
+    return array_filter(
+        app_route_manifest(),
+        static fn(array $meta): bool => app_route_is_enabled($meta)
+    );
+}
+
+function app_route_alias_map(): array
+{
+    static $aliases = null;
+    if (is_array($aliases)) {
+        return $aliases;
+    }
+
+    $aliases = [];
+    foreach (app_route_catalog() as $routeKey => $meta) {
+        foreach (($meta['aliases'] ?? []) as $alias) {
+            $aliases[(string)$alias] = $routeKey;
+        }
+    }
+    return $aliases;
+}
+
+function app_resolve_route_key(string $requested, string $default = 'landing'): string
+{
+    $key = strtolower(trim($requested));
+    if ($key === '') {
+        $key = $default;
+    }
+    $aliases = app_route_alias_map();
+    return $aliases[$key] ?? $key;
+}
+
+function app_route_meta(string $routeKey): ?array
+{
+    $resolved = app_resolve_route_key($routeKey);
+    $catalog = app_route_catalog();
+    return $catalog[$resolved] ?? null;
+}
+
+function app_route_view(string $routeKey): ?string
+{
+    $meta = app_route_meta($routeKey);
+    return $meta['view'] ?? null;
+}
+
+function app_route_scripts(string $routeKey): array
+{
+    $meta = app_route_meta($routeKey);
+    $scripts = $meta['scripts'] ?? [];
+    return is_array($scripts) ? $scripts : [];
+}
+
+function app_route_is_nav_visible(string $routeKey): bool
+{
+    $meta = app_route_meta($routeKey);
+    if ($meta === null) {
+        return false;
+    }
+
+    return ($meta['nav_hidden'] ?? false) !== true;
+}
+
+function app_nav_section_blueprint(): array
+{
+    return [
+        [
+            'key' => 'console',
+            'label' => 'Workspace',
+            'default_collapsed' => false,
+            'groups' => [
+                'core' => ['label' => 'Core'],
+            ],
+        ],
+        [
+            'key' => 'malware',
+            'label' => 'Malware Curation',
+            'default_collapsed' => false,
+            'groups' => [
+                'catalog' => ['label' => 'Catalog'],
+                'taxonomy' => ['label' => 'Taxonomy workspace'],
+                'policy' => ['label' => 'Planning & policy'],
+            ],
+        ],
+        [
+            'key' => 'dataset',
+            'label' => 'Dataset Curation',
+            'default_collapsed' => false,
+            'groups' => [
+                'surfaces' => ['label' => 'Governed surfaces'],
+                'release' => ['label' => 'Release planning'],
+            ],
+        ],
+        [
+            'key' => 'intake',
+            'label' => 'Artifact Intake',
+            'default_collapsed' => true,
+            'groups' => [
+                'queue' => ['label' => 'Queue & submission'],
+            ],
+        ],
+        [
+            'key' => 'permissions',
+            'label' => 'Permission Intel',
+            'default_collapsed' => true,
+            'groups' => [
+                'operate' => ['label' => 'Operate'],
+                'diagnostics' => ['label' => 'Diagnostics'],
+                'reference' => ['label' => 'Reference surfaces'],
+            ],
+        ],
+        [
+            'key' => 'pipeline',
+            'label' => 'VT Pipeline',
+            'default_collapsed' => true,
+            'groups' => [
+                'operate' => ['label' => 'Operate'],
+                'detail' => ['label' => 'Detail pages'],
+            ],
+        ],
+        [
+            'key' => 'admin',
+            'label' => 'Platform & Admin',
+            'default_collapsed' => true,
+            'groups' => [
+                'structure' => ['label' => 'Schema & stack'],
+                'admin' => ['label' => 'Admin'],
+            ],
+        ],
+    ];
+}
+
+function app_nav_route_overrides(): array
+{
+    return [
+        'landing' => ['section' => 'console', 'group' => 'core', 'order' => 10, 'label' => 'Home'],
+        'samples' => ['section' => 'malware', 'group' => 'catalog', 'order' => 10],
+
+        'family_taxonomy_check' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 10, 'label' => 'Taxonomy Workspace'],
+        'family_taxonomy_gaps' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 20, 'priority' => 20],
+        'family_taxonomy_queue' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 30, 'priority' => 30],
+        'family_taxonomy_conflicts' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 40],
+        'family_taxonomy_repair_planning' => ['section' => 'malware', 'group' => 'policy', 'order' => 10],
+        'family_taxonomy_signal_hygiene' => ['section' => 'malware', 'group' => 'policy', 'order' => 20],
+
+        'dataset_readiness' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 10],
+        'type_benchmark' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 20, 'priority' => 40],
+        'label_surfaces' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 30],
+        'authority_consistency_debt' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 40],
+        'dataset_exports' => ['section' => 'dataset', 'group' => 'release', 'order' => 10, 'label' => 'Export Readiness'],
+
+        'check_hash' => ['section' => 'intake', 'group' => 'queue', 'order' => 10],
+        'ingest_backlog' => ['section' => 'intake', 'group' => 'queue', 'order' => 20],
+        'submit_artifact' => ['section' => 'intake', 'group' => 'queue', 'order' => 30],
+
+        'permissions_overview' => ['section' => 'permissions', 'group' => 'operate', 'order' => 10],
+        'permissions_triage' => ['section' => 'permissions', 'group' => 'operate', 'order' => 20, 'priority' => 50],
+        'permissions_review' => ['section' => 'permissions', 'group' => 'operate', 'order' => 30],
+        'permissions_queue' => ['section' => 'permissions', 'group' => 'operate', 'order' => 40],
+        'permissions_drift' => ['section' => 'permissions', 'group' => 'diagnostics', 'order' => 10],
+        'permissions_evidence' => ['section' => 'permissions', 'group' => 'diagnostics', 'order' => 20],
+        'analysis_fusion' => ['section' => 'permissions', 'group' => 'diagnostics', 'order' => 30],
+        'permissions_aosp' => ['section' => 'permissions', 'group' => 'reference', 'order' => 10],
+        'permissions_google' => ['section' => 'permissions', 'group' => 'reference', 'order' => 20],
+        'permissions_oem_registry' => ['section' => 'permissions', 'group' => 'reference', 'order' => 30],
+        'permissions_oem_permissions' => ['section' => 'permissions', 'group' => 'reference', 'order' => 40],
+
+        'health' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 10, 'label' => 'Pipeline Health', 'priority' => 10],
+        'vt_ops_dashboard' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 20, 'label' => 'Evidence Ops'],
+        'vt_confidence' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 30],
+        'runs' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 10],
+        'vt_snapshot_inventory' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 20, 'label' => 'Snapshot Inventory'],
+        'vt_key_controls' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 30, 'label' => 'VT Key Drilldown'],
+
+        'stack_audit' => ['section' => 'admin', 'group' => 'structure', 'order' => 10],
+        'schema_inventory' => ['section' => 'admin', 'group' => 'structure', 'order' => 20],
+        'admin_diagnostics' => ['section' => 'admin', 'group' => 'admin', 'order' => 10],
+        'settings' => ['section' => 'admin', 'group' => 'admin', 'order' => 20],
+    ];
+}
+
+function app_nav_sections_manifest(): array
+{
+    $blueprint = app_nav_section_blueprint();
+    $overrides = app_nav_route_overrides();
+    $catalog = app_route_catalog();
+    $sections = [];
+
+    foreach ($blueprint as $sectionConfig) {
+        $sectionKey = (string)$sectionConfig['key'];
+        $groups = [];
+        foreach (($sectionConfig['groups'] ?? []) as $groupKey => $groupConfig) {
+            $links = [];
+            foreach ($overrides as $route => $override) {
+                if (($override['section'] ?? null) !== $sectionKey || ($override['group'] ?? null) !== $groupKey) {
+                    continue;
+                }
+                $meta = $catalog[$route] ?? null;
+                if ($meta === null) {
+                    continue;
+                }
+                if (($meta['nav_hidden'] ?? false) === true) {
+                    continue;
+                }
+                $links[] = [
+                    'route' => $route,
+                    'label' => (string)($override['label'] ?? ($meta['label'] ?? $route)),
+                    'order' => (int)($override['order'] ?? 999),
+                ];
+            }
+            usort($links, static fn(array $a, array $b): int => ($a['order'] <=> $b['order']) ?: strcmp((string)$a['label'], (string)$b['label']));
+            if ($links !== []) {
+                $groups[] = [
+                    'label' => $groupConfig['label'] ?? null,
+                    'links' => array_map(
+                        static fn(array $link): array => ['route' => $link['route'], 'label' => $link['label']],
+                        $links
+                    ),
+                ];
+            }
+        }
+        if ($groups !== []) {
+            $sectionConfig['groups'] = $groups;
+            $sections[] = $sectionConfig;
+        }
+    }
+
+    return $sections;
+}
+
+function app_priority_lane_links(): array
+{
+    $overrides = app_nav_route_overrides();
+    $catalog = app_route_catalog();
+    $links = [];
+
+    foreach ($overrides as $route => $override) {
+        if (!isset($override['priority']) || !isset($catalog[$route])) {
+            continue;
+        }
+        $meta = $catalog[$route];
+        $links[] = [
+            'route' => $route,
+            'label' => (string)($override['label'] ?? ($meta['label'] ?? $route)),
+            'order' => (int)$override['priority'],
+        ];
+    }
+
+    usort($links, static fn(array $a, array $b): int => ($a['order'] <=> $b['order']) ?: strcmp((string)$a['label'], (string)$b['label']));
+
+    return array_map(
+        static fn(array $link): array => ['route' => $link['route'], 'label' => $link['label']],
+        $links
+    );
+}

@@ -1,0 +1,190 @@
+(() => {
+  const root = document.getElementById('analysis-fusion-page');
+  if (!root || !window.App || !window.PermissionIntel) return;
+
+  const endpoint = root.dataset.endpoint || '';
+  const limit = root.dataset.limit || '50';
+  if (!endpoint) return;
+
+  const summaryEl = document.getElementById('analysis-fusion-summary');
+  const metaEl = document.getElementById('analysis-fusion-meta');
+  const rowsBodyEl = document.getElementById('analysis-fusion-rows-body');
+  const attackSummaryEl = document.getElementById('analysis-fusion-attack-summary');
+  const errorEl = document.getElementById('analysis-fusion-error');
+
+  const esc = App.escapeHtml;
+  const fmt = App.fmt;
+  const formatUtc = App.formatUtc;
+  const pageUrl = App.pageUrl;
+  const { formatCount } = PermissionIntel;
+
+  const BUCKETS = {
+    behavior_outpaces_vt: {
+      label: 'Behavior outpaces VT',
+      className: 'badge err',
+      hint: 'Mapped permission behavior exists, but VT confidence is weak, review-only, or missing.',
+    },
+    vt_without_permission_behavior: {
+      label: 'VT without permission behavior',
+      className: 'badge warn',
+      hint: 'Strong VT evidence exists, but no permission ATT&CK mapping is present.',
+    },
+    aligned_high_signal: {
+      label: 'Aligned high signal',
+      className: 'badge ok',
+      hint: 'VT confidence and permission behavior corroborate each other.',
+    },
+    behavior_with_moderate_vt: {
+      label: 'Behavior with moderate VT',
+      className: 'badge warn',
+      hint: 'Permission behavior exists with moderate or non-high VT support.',
+    },
+    vt_only_context: {
+      label: 'VT-only context',
+      className: 'badge muted',
+      hint: 'VT confidence exists without mapped Permission Intel behavior.',
+    },
+  };
+
+  function bucketMeta(bucket) {
+    const key = String(bucket || '').toLowerCase();
+    return BUCKETS[key] || { label: bucket || '--', className: 'badge muted', hint: '' };
+  }
+
+  function confidenceBadge(bucket) {
+    const key = String(bucket || '').toLowerCase();
+    if (key === 'high' || key === 'strong') return 'badge ok';
+    if (key === 'moderate') return 'badge warn';
+    if (key === 'review' || key === 'weak') return 'badge err';
+    return 'badge muted';
+  }
+
+  function familyAlignmentBadge(alignment) {
+    const key = String(alignment || '').toLowerCase();
+    if (key === 'aligned') return 'badge ok';
+    if (key === 'mismatch') return 'badge err';
+    if (key === 'signal_only' || key === 'catalog_only') return 'badge warn';
+    return 'badge muted';
+  }
+
+  function renderUnavailable(data, meta) {
+    if (metaEl) {
+      metaEl.textContent = `Primary: ${meta.primary_database || '--'} | PI: ${meta.permission_intel_database || '--'} | schema unavailable`;
+    }
+    const missing = Array.isArray(data.schema_missing) ? data.schema_missing : [];
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <div class="detail-card">
+          <div class="detail-card-title">Schema unavailable</div>
+          <div class="muted">Apply the VT confidence and Permission ATT&amp;CK database surfaces before using fused analysis.</div>
+          <div class="muted" style="margin-top:8px;">Missing items: ${esc(String(missing.length))}</div>
+        </div>
+      `;
+    }
+    if (rowsBodyEl) rowsBodyEl.innerHTML = '<tr><td colspan="6" class="muted">No fusion rows available.</td></tr>';
+    if (attackSummaryEl) attackSummaryEl.innerHTML = '<li class="muted">Unavailable until schema is present.</li>';
+  }
+
+  function renderSummary(rows) {
+    if (!summaryEl) return;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      summaryEl.innerHTML = '<div class="detail-card"><div class="muted">No fusion buckets found.</div></div>';
+      return;
+    }
+    summaryEl.innerHTML = rows.map((row) => {
+      const meta = bucketMeta(row.fusion_bucket);
+      return `
+        <div class="detail-card">
+          <div class="detail-card-title"><span class="${meta.className}">${esc(meta.label)}</span></div>
+          <div class="detail-row">
+            <div class="detail-label">Samples</div>
+            <div class="detail-value">${esc(formatCount(row.sample_count))}</div>
+          </div>
+          <div class="muted">${esc(meta.hint)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderRows(rows) {
+    if (!rowsBodyEl) return;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      rowsBodyEl.innerHTML = '<tr><td colspan="6" class="muted">No fusion rows found.</td></tr>';
+      return;
+    }
+    rowsBodyEl.innerHTML = rows.map((row) => {
+      const hash = row.sha256 ? String(row.sha256).slice(0, 16) : '--';
+      const bucket = bucketMeta(row.fusion_bucket);
+      const confidenceBucket = row.confidence_bucket || '--';
+      const detailUrl = row.sha256
+        ? pageUrl('sample_detail', { sha256: row.sha256 })
+        : pageUrl('sample_detail', { sample_id: row.sample_id || '' });
+      return `
+        <tr>
+          <td><code>${esc(hash)}</code><br><span class="muted">sample ${esc(row.sample_id || '--')} | ${esc(row.package_name || row.sample_label || '--')}</span><br><a class="btn btn-small btn-muted" href="${esc(detailUrl)}">Open sample</a></td>
+          <td><span class="${bucket.className}">${esc(bucket.label)}</span></td>
+          <td>
+            <span class="${familyAlignmentBadge(row.family_alignment_status)}">${esc(row.family_alignment_status || '--')}</span>
+            <br><span class="muted">${esc(row.family_label || '--')}</span>
+            <br><span class="muted">${esc(row.popular_threat_name || row.popular_threat_label || '--')}</span>
+          </td>
+          <td>
+            <span class="${confidenceBadge(confidenceBucket)}">${esc(confidenceBucket)}</span>
+            <br><span class="muted">score=${esc(row.confidence_score ?? '--')} mal=${esc(row.vt_malicious_count ?? '--')}/${esc(row.vt_total_engines ?? '--')}</span>
+          </td>
+          <td>
+            ${esc(formatCount(row.attack_technique_count))} techniques / ${esc(formatCount(row.mapped_permission_count))} permissions
+            <br><span class="muted">${esc(row.attack_technique_ids || '--')}</span>
+            <br><span class="muted">${esc(row.tactics || '')}</span>
+          </td>
+          <td>${esc(row.fusion_reason || '--')}<br><span class="muted">${esc(row.recommended_action || '')}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderAttackSummary(rows) {
+    if (!attackSummaryEl) return;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      attackSummaryEl.innerHTML = '<li class="muted">No ATT&CK summary rows found.</li>';
+      return;
+    }
+    attackSummaryEl.innerHTML = rows.map((row) => {
+      return `<li><strong>${esc(row.attack_technique_id || '--')}</strong> ${esc(row.attack_name || '')}: ${esc(formatCount(row.sample_count))} samples, ${esc(formatCount(row.mapped_permission_observations))} mapped observations <span class="muted">${esc(row.tactic || '')}</span></li>`;
+    }).join('');
+  }
+
+  async function load() {
+    if (errorEl) errorEl.textContent = '';
+    try {
+      const url = new URL(endpoint, window.location.origin);
+      url.searchParams.set('limit', String(limit));
+      const res = await App.fetchJson(url.toString());
+      if (!res.ok) {
+        if (errorEl) errorEl.textContent = `Analysis fusion API error: HTTP ${res.status} ${res.error || ''}`;
+        return;
+      }
+      const body = res.body || {};
+      const data = body.data || {};
+      const meta = body.meta || {};
+      if (meta.schema_available === false) {
+        renderUnavailable(data, meta);
+        return;
+      }
+      if (metaEl) {
+        const generated = meta.generated_at_utc ? formatUtc(meta.generated_at_utc) : '--';
+        const split = meta.permission_intel_split ? 'split' : 'unified';
+        metaEl.textContent = `Primary: ${meta.primary_database || '--'} | PI: ${meta.permission_intel_database || '--'} (${split}) | Updated: ${generated}`;
+      }
+      renderSummary(data.summary || []);
+      renderRows(data.fusion_rows || []);
+      renderAttackSummary(data.attack_surface_summary || []);
+    } catch (err) {
+      if (errorEl) {
+        errorEl.textContent = `Analysis fusion load failed: ${err && err.message ? err.message : String(err)}`;
+      }
+    }
+  }
+
+  load();
+})();

@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build and test output
+public/assets/build/
+test-results/
+playwright-report/
+coverage/
+dist/
+build/
+*.tsbuildinfo
+
+# Runtime and caches
+logs/*.log
+logs/*.pid
+logs/cache/*.json
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+.eslintcache
+.phpstan/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local audit artifacts
+repo_*inventory.txt
+repo_git_status.txt
+
+# Package manager debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -1,0 +1,33 @@
+{
+  "name": "erebus/erebus-web",
+  "description": "Internal Erebus operator console for VT, family-taxonomy, and permission-intel analysis",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5",
+    "phpstan/phpstan": "^2.1",
+    "rector/rector": "^2.1"
+  },
+  "autoload": {
+    "files": [
+      "app/lib/app_config.php"
+    ]
+  },
+  "scripts": {
+    "clean": "bash scripts/cleanup-repo.sh",
+    "test:phpunit": "phpunit --configuration phpunit.xml.dist",
+    "test:phpstan": "phpstan analyse --configuration phpstan.neon.dist --memory-limit=512M",
+    "check:php": [
+      "@test:phpunit",
+      "@test:phpstan"
+    ]
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

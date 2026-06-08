@@ -1,0 +1,914 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Erebus Web Operator API",
+    "version": "1.0.0",
+    "description": "Minimal machine-readable contract for the main Erebus Web operator endpoints. This documents the current API behavior as it exists today, including the standard ok/data/meta envelope used by the core operator surfaces."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Erebus Web root"
+    }
+  ],
+  "paths": {
+    "/api.php/openapi.php": {
+      "get": {
+        "summary": "Fetch the Erebus Web OpenAPI contract",
+        "operationId": "getOpenApiDocument",
+        "responses": {
+          "200": {
+            "description": "OpenAPI document JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/OpenApiDocument"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/stack_audit.php": {
+      "get": {
+        "summary": "Fetch stack audit inventory and upgrade gaps",
+        "operationId": "getStackAudit",
+        "responses": {
+          "200": {
+            "description": "Stack audit envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/StackAuditResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/family_taxonomy_check.php": {
+      "get": {
+        "summary": "Fetch family taxonomy repair queue and analytics",
+        "operationId": "getFamilyTaxonomyCheck",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250,
+              "default": 100
+            }
+          },
+          {
+            "name": "alignment",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["", "mismatch", "signal_only", "catalog_only", "aligned", "unlabeled", "generic_label"]
+            }
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["", "unknown_catalog", "generic_catalog", "generic_signal", "short_signal", "spy_bank_loader_signal", "placeholder_catalog", "alias_candidate", "alias_resolved", "semantic_conflict"]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pair_catalog",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pair_signal",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fix_action",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_family",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "decision_mode",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Family taxonomy envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/FamilyTaxonomyCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/landing_snapshot.php": {
+      "get": {
+        "summary": "Fetch the lightweight landing page operator snapshot",
+        "operationId": "getLandingSnapshot",
+        "responses": {
+          "200": {
+            "description": "Landing snapshot envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/LandingSnapshotResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/health.php": {
+      "get": {
+        "summary": "Fetch operator health and catalog state",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Health envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/samples_list.php": {
+      "get": {
+        "summary": "Fetch paginated sample rows",
+        "operationId": "getSamplesList",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "family",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "family_alignment",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc", "ASC", "DESC"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Legacy top-level paginated samples payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/SamplesListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "OpenApiDocument": {
+      "type": "object",
+      "required": ["openapi", "info", "paths"],
+      "properties": {
+        "openapi": {
+          "type": "string"
+        },
+        "info": {
+          "type": "object"
+        },
+        "paths": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "ApiMeta": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "type": "string"
+        },
+        "server_utc_now": {
+          "type": "string"
+        },
+        "elapsed_ms": {
+          "type": "number"
+        },
+        "contract_version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "StackAuditData": {
+      "type": "object",
+      "required": ["runtime", "capabilities", "architecture_profile", "gap_inventory", "upgrade_tracks", "research_anchors", "cli_entrypoints"],
+      "properties": {
+        "runtime": {
+          "type": "object",
+          "properties": {
+            "php_runtime": {
+              "type": "string"
+            },
+            "app_package": {
+              "type": "string"
+            },
+            "app_package_version": {
+              "type": "string"
+            },
+            "frontend_dependencies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "capabilities": {
+          "type": "object",
+          "required": ["composer_present", "playwright_config_present", "phpunit_present", "phpstan_present", "openapi_present", "ui_spec_count", "api_contract_count"],
+          "properties": {
+            "composer_present": {
+              "type": "boolean"
+            },
+            "playwright_config_present": {
+              "type": "boolean"
+            },
+            "phpunit_present": {
+              "type": "boolean"
+            },
+            "phpstan_present": {
+              "type": "boolean"
+            },
+            "openapi_present": {
+              "type": "boolean"
+            },
+            "ui_spec_count": {
+              "type": "integer"
+            },
+            "api_contract_count": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "architecture_profile": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "gap_inventory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "upgrade_tracks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "research_anchors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "cli_entrypoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "StackAuditResponse": {
+      "type": "object",
+      "required": ["ok", "data", "meta"],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "data": {
+          "$ref": "#/$defs/StackAuditData"
+        },
+        "meta": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ApiMeta"
+            },
+            {
+              "type": "object",
+              "required": ["generated_at_utc", "schema_surface"],
+              "properties": {
+                "generated_at_utc": {
+                  "type": "string"
+                },
+                "schema_surface": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "FamilyTaxonomyRow": {
+      "type": "object",
+      "required": ["sample_id", "sha256", "alignment_status", "issue_kind", "suggested_fix_action", "suggested_target_family", "decision_mode", "decision_priority", "review_lane"],
+      "properties": {
+        "sample_id": {
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "family_label": {
+          "type": ["string", "null"]
+        },
+        "popular_threat_name": {
+          "type": ["string", "null"]
+        },
+        "alignment_status": {
+          "type": "string"
+        },
+        "issue_kind": {
+          "type": "string"
+        },
+        "suggested_fix_action": {
+          "type": "string"
+        },
+        "suggested_target_family": {
+          "type": ["string", "null"]
+        },
+        "decision_mode": {
+          "type": "string"
+        },
+        "decision_priority": {
+          "type": "string"
+        },
+        "review_lane": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "FamilyTaxonomyGovernanceInventory": {
+      "type": "object",
+      "required": ["total_rows", "targeted_rows", "untargeted_rows", "target_groups", "untargeted_pair_groups", "untargeted_top_signal_labels", "untargeted_top_catalog_labels"],
+      "properties": {
+        "total_rows": {
+          "type": "integer"
+        },
+        "targeted_rows": {
+          "type": "integer"
+        },
+        "untargeted_rows": {
+          "type": "integer"
+        },
+        "target_groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "untargeted_pair_groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "untargeted_top_signal_labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "untargeted_top_catalog_labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "FamilyTaxonomyApplyPlan": {
+      "type": "object",
+      "required": ["dry_run", "supported_actions", "plan_rows", "summary"],
+      "properties": {
+        "dry_run": {
+          "type": "boolean"
+        },
+        "supported_actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "plan_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": ["candidate_rows", "plan_group_count", "excluded_rows", "excluded_reasons"],
+          "properties": {
+            "candidate_rows": {
+              "type": "integer"
+            },
+            "plan_group_count": {
+              "type": "integer"
+            },
+            "excluded_rows": {
+              "type": "integer"
+            },
+            "excluded_reasons": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer"
+              }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "FamilyTaxonomyCheckData": {
+      "type": "object",
+      "required": ["summary", "rows", "mismatch_pairs", "remediation_summary", "issue_inventory", "queue_presets", "fix_action_inventory", "decision_inventory", "governance_inventory", "apply_plan", "repair_opportunities"],
+      "properties": {
+        "summary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FamilyTaxonomyRow"
+          }
+        },
+        "mismatch_pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "remediation_summary": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "issue_inventory": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "queue_presets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "fix_action_inventory": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "decision_inventory": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "governance_inventory": {
+          "$ref": "#/$defs/FamilyTaxonomyGovernanceInventory"
+        },
+        "apply_plan": {
+          "$ref": "#/$defs/FamilyTaxonomyApplyPlan"
+        },
+        "repair_opportunities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "FamilyTaxonomyCheckResponse": {
+      "type": "object",
+      "required": ["ok", "data", "meta"],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "data": {
+          "$ref": "#/$defs/FamilyTaxonomyCheckData"
+        },
+        "meta": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ApiMeta"
+            },
+            {
+              "type": "object",
+              "required": ["schema_available", "primary_database", "limit", "pattern", "fix_action", "target_family", "decision_mode"],
+              "properties": {
+                "schema_available": {
+                  "type": "boolean"
+                },
+                "primary_database": {
+                  "type": "string"
+                },
+                "limit": {
+                  "type": "integer"
+                },
+                "pattern": {
+                  "type": "string"
+                },
+                "fix_action": {
+                  "type": "string"
+                },
+                "target_family": {
+                  "type": "string"
+                },
+                "decision_mode": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "LandingSnapshotData": {
+      "type": "object",
+      "required": ["generated_at_utc", "health", "family", "stack"],
+      "properties": {
+        "generated_at_utc": {
+          "type": "string"
+        },
+        "health": {
+          "type": "object",
+          "required": ["eligible_now", "processing_now", "error_count", "retry_wait_count", "stale_claims", "reason_breakdown", "hold_until_utc", "hold_reason_code"],
+          "properties": {
+            "eligible_now": {
+              "type": "integer"
+            },
+            "processing_now": {
+              "type": "integer"
+            },
+            "error_count": {
+              "type": "integer"
+            },
+            "retry_wait_count": {
+              "type": "integer"
+            },
+            "stale_claims": {
+              "type": "integer"
+            },
+            "reason_breakdown": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "hold_until_utc": {
+              "type": "string"
+            },
+            "hold_reason_code": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "family": {
+          "type": "object",
+          "required": ["summary", "top_mismatch_pairs"],
+          "properties": {
+            "summary": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "top_mismatch_pairs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "stack": {
+          "type": "object",
+          "required": ["gap_count", "gaps", "ui_spec_count", "api_contract_count", "typed_source_page_count", "ts_page_count"],
+          "properties": {
+            "gap_count": {
+              "type": "integer"
+            },
+            "gaps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "ui_spec_count": {
+              "type": "integer"
+            },
+            "api_contract_count": {
+              "type": "integer"
+            },
+            "typed_source_page_count": {
+              "type": "integer"
+            },
+            "ts_page_count": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "LandingSnapshotResponse": {
+      "type": "object",
+      "required": ["ok", "data", "meta"],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "data": {
+          "$ref": "#/$defs/LandingSnapshotData"
+        },
+        "meta": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ApiMeta"
+            },
+            {
+              "type": "object",
+              "required": ["generated_at_utc", "schema_surface"],
+              "properties": {
+                "generated_at_utc": {
+                  "type": "string"
+                },
+                "schema_surface": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "HealthData": {
+      "type": "object",
+      "required": ["utc_now", "metrics", "system_control", "catalogs", "schema_heads", "workflow_debt", "vt_surface_summary", "family_taxonomy_summary"],
+      "properties": {
+        "utc_now": {
+          "type": "string"
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "system_control": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "catalogs": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "schema_heads": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "workflow_debt": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "vt_surface_summary": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "family_taxonomy_summary": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "HealthResponse": {
+      "type": "object",
+      "required": ["ok", "data", "meta"],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "data": {
+          "$ref": "#/$defs/HealthData"
+        },
+        "meta": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ApiMeta"
+            },
+            {
+              "type": "object",
+              "required": ["generated_at_utc", "schema_surface"],
+              "properties": {
+                "generated_at_utc": {
+                  "type": "string"
+                },
+                "schema_surface": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "SamplesListData": {
+      "type": "object",
+      "required": ["page", "page_size", "total_count", "total_pages", "has_more", "rows"],
+      "properties": {
+        "page": {
+          "type": "integer"
+        },
+        "page_size": {
+          "type": "integer"
+        },
+        "total_count": {
+          "type": "integer"
+        },
+        "total_pages": {
+          "type": "integer"
+        },
+        "has_more": {
+          "type": "boolean"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "SamplesListResponse": {
+      "type": "object",
+      "required": ["ok", "data", "meta"],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "data": {
+          "$ref": "#/$defs/SamplesListData"
+        },
+        "meta": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ApiMeta"
+            },
+            {
+              "type": "object",
+              "required": ["generated_at_utc", "schema_surface"],
+              "properties": {
+                "generated_at_utc": {
+                  "type": "string"
+                },
+                "schema_surface": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

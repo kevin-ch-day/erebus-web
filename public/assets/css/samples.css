@@ -1,0 +1,120 @@
+/* samples.css
+   Page-specific styles for sample list/detail workflows.
+*/
+
+.samples-filter-actions {
+  min-width: 220px;
+}
+
+.samples-filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 860px) {
+  .samples-filter-actions {
+    min-width: 100%;
+  }
+}
+
+.samples-table td {
+  font-size: 13px;
+}
+
+.samples-sort-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.samples-sort-btn:hover {
+  color: var(--accent);
+}
+
+.samples-sort-btn.active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.samples-sort-indicator {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.samples-table tbody tr:nth-child(even) td {
+  background: var(--surface-alt-even-row);
+}
+
+.samples-table th:last-child,
+.samples-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  white-space: nowrap;
+  min-width: 120px;
+  background: var(--surface-gradient-sticky-col);
+  border-left: 1px solid var(--border);
+}
+
+.samples-table th:last-child {
+  z-index: 3;
+}
+
+.copy-btn {
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  color: var(--muted);
+}
+
+.copy-btn:hover {
+  background: var(--hover);
+  color: var(--accent);
+  border-color: var(--accent-border-strong);
+}
+
+.samples-table.simple .col-detail {
+  display: none;
+}
+
+.sample-summary {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-gradient-strong);
+  margin: 12px 0 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.sample-summary-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-alt);
+}
+
+.sample-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sample-summary-meta {
+  margin-top: 6px;
+  font-size: 13px;
+}

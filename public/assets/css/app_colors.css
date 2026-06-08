@@ -1,0 +1,165 @@
+/* app_colors.css
+   Purpose: define application color tokens (no layout selectors).
+   Dark-first palette for Erebus Web.
+*/
+
+:root {
+  /* Core (dark) */
+  --bg: #0a0f1e;         /* page background */
+  --fg: #f4f7ff;         /* primary text */
+  --muted: #9aa9c2;      /* secondary text */
+  --border: #2a3b63;     /* subtle border */
+  --panel: #0f1a33;      /* cards/topbar/sidebar surface */
+  --panel-soft: #16284f; /* table + badge surfaces */
+  --panel-strong: #0b1429; /* deeper surface */
+  --table-header: #162a54;
+  --row-hover: #22345f;
+
+  /* Accents (triad: cyan + violet + ember) */
+  --accent: #4ad6ff;     /* cyan */
+  --accent-strong: #1bb3ff;
+  --accent-alt: #8f86ff; /* violet */
+  --accent-warm: #ff9f66; /* ember */
+  --accent-soft: #132e51; /* cyan surface */
+  --accent-alt-soft: #1f2354; /* violet surface */
+  --accent-warm-soft: #2c211c; /* ember surface */
+
+  /* Status */
+  --ok: #2fd0a2;         /* teal */
+  --warn: #ffb05e;       /* amber */
+  --err: #ff5d7a;        /* rose */
+  --ok-soft: rgba(47, 208, 162, 0.16);
+  --warn-soft: rgba(255, 176, 94, 0.18);
+  --err-soft: rgba(255, 93, 122, 0.18);
+  --muted-soft: rgba(148, 163, 184, 0.18);
+
+  /* UI */
+  --hover: #1c2d55;      /* hover surface */
+  --shadow: 0 14px 30px rgba(4, 8, 18, 0.45);
+  --shadow-soft: 0 8px 20px rgba(4, 8, 18, 0.35);
+  --focus-ring: rgba(74, 214, 255, 0.5);
+  --glow-cyan: 0 0 0 1px rgba(74, 214, 255, 0.14), 0 0 22px rgba(74, 214, 255, 0.08);
+  --glow-violet: 0 0 0 1px rgba(139, 123, 255, 0.14), 0 0 24px rgba(139, 123, 255, 0.08);
+  --bg-gradient: radial-gradient(1200px 700px at 10% -10%, rgba(74, 214, 255, 0.14), transparent 60%),
+                 radial-gradient(1000px 500px at 90% 0%, rgba(255, 159, 102, 0.1), transparent 55%),
+                 radial-gradient(800px 500px at 50% 110%, rgba(139, 123, 255, 0.08), transparent 60%);
+  --surface-gradient-strong: linear-gradient(140deg, var(--panel) 0%, #111f3c 100%);
+  --surface-gradient-hero: linear-gradient(135deg, var(--panel) 0%, #1a2a4c 100%);
+  --surface-gradient-deep: linear-gradient(140deg, var(--panel-strong) 0%, #101b34 100%);
+  --surface-gradient-soft: linear-gradient(135deg, var(--panel-soft) 0%, #16264b 100%);
+  --surface-gradient-sidebar: linear-gradient(180deg, var(--panel) 0%, #0f1a34 100%);
+  --surface-gradient-table: linear-gradient(180deg, var(--panel) 0%, #0f1b36 100%);
+  --surface-gradient-table-head: linear-gradient(180deg, var(--table-header) 0%, #132348 100%);
+  --surface-gradient-sticky-col: linear-gradient(180deg, #12234a 0%, #0f1b36 100%);
+  --surface-gradient-hover-row: linear-gradient(90deg, rgba(74, 214, 255, 0.06), var(--row-hover));
+  --surface-alt-even-row: rgba(255, 255, 255, 0.02);
+  --divider-faint: rgba(255, 255, 255, 0.06);
+  --status-ok-border: rgba(47, 208, 162, 0.35);
+  --status-warn-border: rgba(255, 176, 94, 0.45);
+  --status-warn-bg: rgba(255, 176, 94, 0.12);
+  --status-err-border: rgba(255, 92, 122, 0.4);
+  --status-err-bg: rgba(255, 92, 122, 0.1);
+  --accent-border-strong: rgba(74, 214, 255, 0.6);
+  --accent-bg-soft: rgba(74, 214, 255, 0.12);
+  --accent-border-soft: rgba(74, 214, 255, 0.45);
+  --accent-bg-faint: rgba(74, 214, 255, 0.08);
+  --accent-border-active: rgba(77, 208, 255, 0.35);
+  --accent-bg-active: rgba(77, 208, 255, 0.14);
+  --accent-alt-border-soft: rgba(139, 123, 255, 0.45);
+  --ok-border-soft: rgba(22, 163, 74, 0.35);
+  --warn-border-soft: rgba(245, 158, 11, 0.35);
+  --err-border-soft: rgba(220, 38, 38, 0.35);
+  --modal-backdrop-bg: rgba(15, 23, 42, 0.6);
+  --modal-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+
+  /* Sizing */
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 30px;
+  --sidebar-w: 260px;
+  --sidebar-w-compact: 220px;
+  --shell-content-max: 1440px;
+  --shell-page-pad: 24px;
+  --shell-page-pad-md: 16px;
+  --shell-page-pad-sm: 14px;
+  --shell-section-gap: 22px;
+  --shell-cluster-gap: 14px;
+  --shell-panel-pad: 16px;
+  --shell-panel-pad-lg: 24px;
+
+  /* Typography */
+  --font: "Cantarell", "Noto Sans", "Source Sans 3", "Trebuchet MS", sans-serif;
+  --font-display: "League Spartan", "Cantarell", "Noto Sans Display", "Candara", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", "SFMono-Regular", "Liberation Mono", monospace;
+  --shell-backdrop: rgba(8, 13, 28, 0.72);
+  --shell-border-strong: rgba(120, 149, 212, 0.22);
+  --shell-shadow-lg: 0 24px 60px rgba(2, 6, 18, 0.55);
+  --hero-orbit-cyan: radial-gradient(circle at center, rgba(74, 214, 255, 0.22) 0%, rgba(74, 214, 255, 0) 72%);
+  --hero-orbit-violet: radial-gradient(circle at center, rgba(143, 134, 255, 0.18) 0%, rgba(143, 134, 255, 0) 72%);
+  --hero-orbit-warm: radial-gradient(circle at center, rgba(255, 159, 102, 0.16) 0%, rgba(255, 159, 102, 0) 72%);
+}
+
+:root[data-theme="light"] {
+  --bg: #eef1f6;
+  --fg: #0f172a;
+  --muted: #5f6b7a;
+  --border: #c6d0de;
+  --panel: #f7f9fc;
+  --panel-soft: #e7ecf3;
+  --panel-strong: #dde4ef;
+  --table-header: #e3e9f2;
+  --row-hover: #e9f0fa;
+
+  --accent: #1d4ed8;
+  --accent-strong: #1e40af;
+  --accent-warm: #b45309;
+  --accent-soft: #dbe6fb;
+
+  --ok: #16a34a;
+  --warn: #d97706;
+  --err: #dc2626;
+  --ok-soft: rgba(22, 163, 74, 0.14);
+  --warn-soft: rgba(217, 119, 6, 0.14);
+  --err-soft: rgba(220, 38, 38, 0.14);
+  --muted-soft: rgba(107, 114, 128, 0.12);
+
+  --hover: #e3eaf5;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --focus-ring: rgba(37, 99, 235, 0.4);
+  --shadow-soft: 0 6px 16px rgba(15, 23, 42, 0.08);
+  --glow-cyan: 0 0 0 1px rgba(29, 78, 216, 0.12), 0 0 18px rgba(29, 78, 216, 0.08);
+  --glow-violet: 0 0 0 1px rgba(109, 40, 217, 0.12), 0 0 18px rgba(109, 40, 217, 0.08);
+  --bg-gradient: radial-gradient(1200px 600px at 10% -10%, rgba(29, 78, 216, 0.08), transparent 60%),
+                 radial-gradient(900px 500px at 90% 0%, rgba(217, 119, 6, 0.08), transparent 55%),
+                 radial-gradient(800px 500px at 50% 110%, rgba(109, 40, 217, 0.06), transparent 60%);
+  --surface-gradient-strong: linear-gradient(140deg, var(--panel) 0%, #eef3fa 100%);
+  --surface-gradient-hero: linear-gradient(135deg, var(--panel) 0%, #edf2fb 100%);
+  --surface-gradient-deep: linear-gradient(140deg, var(--panel-strong) 0%, #eef2f8 100%);
+  --surface-gradient-soft: linear-gradient(135deg, var(--panel-soft) 0%, #edf2f8 100%);
+  --surface-gradient-sidebar: linear-gradient(180deg, var(--panel) 0%, #edf2fa 100%);
+  --surface-gradient-table: linear-gradient(180deg, var(--panel) 0%, #edf2fa 100%);
+  --surface-gradient-table-head: linear-gradient(180deg, var(--table-header) 0%, #dbe4f1 100%);
+  --surface-gradient-sticky-col: linear-gradient(180deg, #e3e9f2 0%, #d8e1ee 100%);
+  --surface-gradient-hover-row: linear-gradient(90deg, rgba(29, 78, 216, 0.05), var(--row-hover));
+  --surface-alt-even-row: rgba(255, 255, 255, 0.3);
+  --divider-faint: rgba(198, 208, 222, 0.65);
+  --status-ok-border: rgba(22, 163, 74, 0.35);
+  --status-warn-border: rgba(217, 119, 6, 0.35);
+  --status-warn-bg: rgba(217, 119, 6, 0.12);
+  --status-err-border: rgba(220, 38, 38, 0.35);
+  --status-err-bg: rgba(220, 38, 38, 0.08);
+  --accent-border-strong: rgba(29, 78, 216, 0.45);
+  --accent-bg-soft: rgba(29, 78, 216, 0.1);
+  --accent-border-soft: rgba(29, 78, 216, 0.28);
+  --accent-bg-faint: rgba(29, 78, 216, 0.08);
+  --accent-border-active: rgba(29, 78, 216, 0.28);
+  --accent-bg-active: rgba(29, 78, 216, 0.1);
+  --accent-alt-border-soft: rgba(109, 40, 217, 0.28);
+  --ok-border-soft: rgba(22, 163, 74, 0.28);
+  --warn-border-soft: rgba(217, 119, 6, 0.28);
+  --err-border-soft: rgba(220, 38, 38, 0.28);
+  --modal-backdrop-bg: rgba(15, 23, 42, 0.35);
+  --modal-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+}

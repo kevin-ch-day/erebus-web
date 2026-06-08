@@ -1,0 +1,19 @@
+parameters:
+  level: 1
+  scanDirectories:
+    - app/lib
+    - app/database/queries
+    - app/database/services
+  scanFiles:
+    - app/database/db_config.php
+    - app/database/db_conn.php
+    - app/database/db_engine.php
+  paths:
+    - app/database/services/stack_service.php
+    - app/database/services/family_service.php
+    - app/api/stack_audit.php
+    - app/api/family_taxonomy_check.php
+    - app/api/family_taxonomy_queue_export.php
+    - bin/erebus_console.php
+    - tests/phpunit
+  tmpDir: .phpstan

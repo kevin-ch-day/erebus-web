@@ -1,0 +1,14 @@
+/* style.css
+   Purpose: base layout + typography + utilities.
+   Sidebar styles live in sidebar_style.css.
+   Table styles live in table_style.css.
+*/
+
+@import url("./app_colors.css");
+@import url("./sidebar_style.css");
+@import url("./table_style.css");
+@import url("./components.css");
+@import url("./layout.css");
+@import url("./landing.css");
+@import url("./samples.css");
+@import url("./permissions.css");

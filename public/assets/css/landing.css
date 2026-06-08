@@ -1,0 +1,291 @@
+/* landing.css
+   Live operator home / command surface.
+*/
+
+.landing-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--shell-border-strong);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(61, 209, 255, 0.22) 0, rgba(61, 209, 255, 0) 36%),
+    radial-gradient(circle at 86% 10%, rgba(255, 164, 95, 0.18) 0, rgba(255, 164, 95, 0) 34%),
+    linear-gradient(145deg, rgba(8, 13, 28, 0.98) 0%, rgba(16, 27, 53, 0.96) 100%);
+  box-shadow: var(--shell-shadow-lg);
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+
+.landing-command-main,
+.landing-command-side {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-command-kicker {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-warm);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.landing-command-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 3.4vw, 3.35rem);
+  line-height: 0.92;
+  max-width: 11ch;
+}
+
+.landing-command-lede {
+  max-width: 56ch;
+  margin: 0 0 14px;
+  font-size: 0.98rem;
+}
+
+.landing-command-actions,
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.landing-command-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.landing-inline-metric {
+  border-color: rgba(130, 152, 205, 0.14);
+}
+
+.landing-inline-label,
+.landing-panel-heading,
+.landing-snapshot-label,
+.landing-map-tag {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.landing-inline-value {
+  margin-top: 6px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.landing-command-side {
+  border-color: rgba(130, 152, 205, 0.18);
+  border-radius: var(--radius-xl);
+  background: rgba(7, 13, 27, 0.62);
+  backdrop-filter: blur(16px);
+}
+
+.landing-panel-heading {
+  margin-bottom: 10px;
+}
+
+.landing-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.landing-snapshot-tile {
+  border-color: rgba(130, 152, 205, 0.14);
+  background: rgba(255, 255, 255, 0.026);
+}
+
+.landing-snapshot-value,
+.landing-lane-metric {
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 0.96;
+  font-weight: 800;
+}
+
+.landing-snapshot-note {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.landing-priority-notice {
+  border: 1px solid rgba(255, 164, 95, 0.2);
+  background: rgba(255, 164, 95, 0.07);
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+.landing-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.landing-top-main,
+.landing-top-side {
+  min-width: 0;
+}
+
+.landing-section-compact {
+  height: 100%;
+}
+
+.landing-lane-grid,
+.landing-map-grid,
+.landing-hotspot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.landing-lane-card,
+.landing-map-card {
+  min-height: 196px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing-lane-title,
+.landing-map-title,
+.landing-hotspot-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.landing-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.landing-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(130, 152, 205, 0.14);
+  background: rgba(255, 255, 255, 0.034);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.landing-hotspot-grid .detail-card {
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.landing-hotspot-shell .landing-hotspot-grid {
+  grid-template-columns: 1fr;
+}
+
+.landing-hotspot-pair {
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  line-height: 1.05;
+}
+
+.landing-hotspot-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.landing-hotspot-meta .detail-row {
+  border-bottom: none;
+  padding: 0;
+}
+
+.landing-map-card-permissions {
+  background:
+    linear-gradient(180deg, rgba(163, 255, 184, 0.08) 0%, rgba(163, 255, 184, 0) 42%),
+    var(--panel-fill);
+}
+
+.landing-map-card-admin {
+  background:
+    linear-gradient(180deg, rgba(143, 134, 255, 0.08) 0%, rgba(143, 134, 255, 0) 42%),
+    var(--panel-fill);
+}
+
+.landing-map-card-samples {
+  background:
+    linear-gradient(180deg, rgba(255, 164, 95, 0.09) 0%, rgba(255, 164, 95, 0) 42%),
+    var(--panel-fill);
+}
+
+.landing-map-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.landing-empty {
+  color: var(--muted);
+}
+
+@media (max-width: 1120px) {
+  .landing-command {
+    grid-template-columns: 1fr;
+    padding: 22px;
+  }
+
+  .landing-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-map-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .landing-command-title {
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .landing-command-strip,
+  .landing-snapshot-grid,
+  .landing-hotspot-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .landing-lane-grid,
+  .landing-map-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .landing-command-strip,
+  .landing-snapshot-grid,
+  .landing-hotspot-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-command {
+    padding: 18px;
+  }
+
+  .landing-command-title {
+    font-size: 2.2rem;
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "erebus-web",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Modern frontend shell tooling for the Erebus Web operator console",
+  "scripts": {
+    "clean": "bash scripts/cleanup-repo.sh",
+    "clean:dry-run": "bash scripts/cleanup-repo.sh --dry-run",
+    "dev": "vite",
+    "build:pages": "node scripts/build-page-controllers.mjs",
+    "build": "npm run build:pages && vite build",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.9"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10"
+  }
+}

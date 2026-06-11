@@ -16,10 +16,36 @@ $runsApiUrl = api_url('runs_list.php');
 $pageScripts = ['assets/js/pages/runs_page.js'];
 ?>
 
-<h1>Run Ledger</h1>
-<p class="muted">
-    Execution history for VirusTotal runs (virustotal_run_ledger). Useful for seeing recent batches.
-</p>
+<section class="page-hero">
+    <div class="page-hero-body">
+        <div class="eyebrow">VirusTotal API</div>
+        <div class="page-kicker">Execution history and operator residue</div>
+        <h1 class="page-hero-title">Run Ledger</h1>
+        <p class="page-hero-lede muted">
+            Execution history for VirusTotal runs stored in <code>virustotal_run_ledger</code>.
+            Use this page to inspect recent run batches, visible ledger drift, and execution context without dropping back to the terminal.
+        </p>
+        <div class="page-hero-actions">
+            <a class="btn btn-primary" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
+            <a class="btn" href="<?= h(page_url('vt_snapshot_inventory')) ?>">Snapshot Inventory</a>
+        </div>
+    </div>
+    <aside class="page-hero-side">
+        <h2 class="page-hero-side-title">Operator use</h2>
+        <p>Read this page as the bounded execution history surface. Health explains whether the pipeline can move now; this page explains what recently happened.</p>
+        <div class="hero-metric-grid">
+            <div class="hero-metric">
+                <div class="hero-metric-label">Focus</div>
+                <div class="hero-metric-value">Recent runs</div>
+            </div>
+            <div class="hero-metric">
+                <div class="hero-metric-label">Time basis</div>
+                <div class="hero-metric-value"><?= h(tz_current_id()) ?></div>
+            </div>
+        </div>
+    </aside>
+</section>
+
 <div id="runs-page-root" style="display:none;" data-endpoint="<?= h($runsApiUrl) ?>"></div>
 
 <div class="muted" style="margin: 10px 0;">
@@ -106,4 +132,3 @@ $pageScripts = ['assets/js/pages/runs_page.js'];
 </div>
 
 <div class="health-error" id="runs-error"></div>
-

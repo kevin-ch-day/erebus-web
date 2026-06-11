@@ -25,7 +25,7 @@ $pageScripts = [
         <div class="page-hero-actions">
             <a class="btn btn-primary" href="<?= h(page_url('vt_confidence')) ?>">Refresh</a>
             <a class="btn" href="<?= h(page_url('permissions_overview')) ?>">Permission Overview</a>
-            <a class="btn" href="<?= h(page_url('health')) ?>">VT &amp; Pipeline Health</a>
+            <a class="btn" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
         </div>
     </div>
     <aside class="page-hero-side">

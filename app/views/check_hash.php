@@ -29,8 +29,8 @@ $submitArtifactUrl = page_url('submit_artifact');
             alt="Artifact hash lookup" />
     </div>
     <div class="page-hero-body">
-        <div class="eyebrow">Artifact Intake</div>
-        <div class="page-kicker">Lookup before submission</div>
+        <div class="eyebrow">Threat Workspace</div>
+        <div class="page-kicker">Lookup &amp; triage</div>
         <h1 class="page-hero-title">Check Hash</h1>
         <p class="page-hero-lede muted">
             Use this page to decide whether an artifact is already known, already waiting in intake,

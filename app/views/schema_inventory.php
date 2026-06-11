@@ -21,7 +21,7 @@ $pageScripts = ['assets/js/pages/schema_inventory_page.js'];
         </p>
         <div class="page-hero-actions">
             <a class="btn btn-primary" href="<?= h(page_url('schema_inventory')) ?>">Refresh</a>
-            <a class="btn" href="<?= h(page_url('health')) ?>">VT &amp; Pipeline Health</a>
+            <a class="btn" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
             <a class="btn" href="<?= h(page_url('admin_diagnostics')) ?>">Admin Diagnostics</a>
         </div>
     </div>

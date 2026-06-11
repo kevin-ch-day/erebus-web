@@ -32,7 +32,7 @@ $pageScripts = [
             <?php if (defined('FEATURE_PHASE2B_READONLY') && FEATURE_PHASE2B_READONLY): ?>
                 <a class="btn" href="<?= h(page_url('analysis_fusion')) ?>">Analysis Fusion</a>
             <?php endif; ?>
-            <a class="btn" href="<?= h(page_url('health')) ?>">VT &amp; Pipeline Health</a>
+            <a class="btn" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
         </div>
     </div>
 </section>

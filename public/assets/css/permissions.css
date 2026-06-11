@@ -371,6 +371,10 @@
   gap: 12px;
 }
 
+.health-stage-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .health-stage {
   padding: 14px 16px;
   background: linear-gradient(160deg, rgba(10, 18, 37, 0.96) 0%, rgba(17, 29, 56, 0.92) 100%);

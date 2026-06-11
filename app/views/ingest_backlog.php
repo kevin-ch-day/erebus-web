@@ -54,8 +54,8 @@ foreach ($sources as $sourceRow) {
 
 <section class="page-hero">
     <div class="page-hero-body">
-        <div class="eyebrow">Artifact Intake</div>
-        <div class="page-kicker">Backlog state</div>
+        <div class="eyebrow">Threat Workspace</div>
+        <div class="page-kicker">Queue posture</div>
         <h1 class="page-hero-title">Ingest Backlog</h1>
         <p class="page-hero-lede muted">
             Review queue pressure before adding more artifacts. This page keeps the backlog, lane pressure,
@@ -439,40 +439,32 @@ foreach ($sources as $sourceRow) {
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">Pending source mix</h2>
-            <p class="section-shell-copy">Android feeds are listed first; the generic reservoir stays visible so you can separate governed APK intake from broad discovery backlog.</p>
+            <p class="section-shell-copy">This moved to its own page so the main backlog view stays readable when source-heavy queues expand.</p>
+        </div>
+        <div class="flow-inline">
+            <a class="btn" href="<?= h(page_url('pending_source_mix', ['lane' => $laneFilter, 'limit' => 50])) ?>">Open Pending Source Mix</a>
         </div>
     </div>
-    <div class="table-scroll">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Class</th>
-                    <th>Artifact source</th>
-                    <th>Pending rows</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($sources === []): ?>
-                    <tr><td colspan="3" class="muted">No pending source data available.</td></tr>
-                <?php else: ?>
-                    <?php
-                    $orderedSources = array_merge($androidSources, $genericSources, $otherSources);
-                    ?>
-                    <?php foreach ($orderedSources as $source): ?>
-                        <?php $sourceClass = db_ingest_source_class_label((string)($source['artifact_source'] ?? '')); ?>
-                        <tr>
-                            <td><?= h($sourceClass) ?></td>
-                            <td>
-                                <?= h((string)($source['artifact_source'] ?? '')) ?>
-                                <div style="margin-top: 8px;">
-                                    <a class="table-link" href="<?= h(page_url('ingest_backlog', ['limit' => $limit, 'preview' => $previewLimit, 'source' => (string)($source['artifact_source'] ?? ''), 'lane' => $laneFilter])) ?>">Focus source</a>
-                                </div>
-                            </td>
-                            <td><?= number_format((int)($source['pending_rows'] ?? 0)) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+    <div class="detail-grid">
+        <div class="detail-card">
+            <div class="detail-card-title">Listed sources</div>
+            <div class="detail-value"><?= number_format(count($sources)) ?></div>
+            <div class="muted" style="margin-top:8px;">Open the dedicated page for the full ordered source list and source-level backlog focus links.</div>
+        </div>
+        <div class="detail-card">
+            <div class="detail-card-title">Android feeds first</div>
+            <div class="detail-value"><?= number_format(count($androidSources)) ?></div>
+            <div class="muted" style="margin-top:8px;">Governed APK-oriented feeds stay ahead of the generic reservoir so the operator can separate policy lanes quickly.</div>
+        </div>
+        <div class="detail-card">
+            <div class="detail-card-title">Generic reservoir</div>
+            <div class="detail-value"><?= number_format(count($genericSources)) ?></div>
+            <div class="muted" style="margin-top:8px;">Broad discovery backlog remains visible, but no longer dominates the main backlog page.</div>
+        </div>
+        <div class="detail-card">
+            <div class="detail-card-title">Other feeds</div>
+            <div class="detail-value"><?= number_format(count($otherSources)) ?></div>
+            <div class="muted" style="margin-top:8px;">LAMDA and other non-Android sources remain accessible on the dedicated page.</div>
+        </div>
     </div>
 </section>

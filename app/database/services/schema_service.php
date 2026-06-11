@@ -58,7 +58,7 @@ function db_known_schema_surfaces(): array
             'catalog_role' => 'primary',
             'object_kind' => 'table',
             'analysis_role' => 'sample_identity',
-            'consumer_pages' => ['samples', 'sample_detail', 'classification_gaps', 'vt_confidence', 'analysis_fusion'],
+            'consumer_pages' => ['malware_samples', 'sample_detail', 'classification_gaps', 'vt_confidence', 'analysis_fusion'],
             'columns' => ['sample_id', 'sha256'],
         ],
         [

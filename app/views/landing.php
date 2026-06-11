@@ -28,7 +28,7 @@ $landingApiUrl = api_url('landing_snapshot.php');
             See live pressure first, then move straight into the queue or governed curation surface that actually needs attention.
         </p>
         <div class="landing-command-actions">
-            <a class="btn btn-primary" href="<?= h(page_url('health')) ?>">Open VT &amp; Pipeline Health</a>
+            <a class="btn btn-primary" href="<?= h(page_url('health')) ?>">Open Pipeline Health</a>
             <a class="btn" href="<?= h(page_url('family_taxonomy_queue', ['platform' => 'android'])) ?>">Open Family Repair Queue</a>
             <a class="btn" href="<?= h(page_url('type_benchmark')) ?>">Open Type Benchmark</a>
         </div>
@@ -182,10 +182,10 @@ $landingApiUrl = api_url('landing_snapshot.php');
         </div>
         <div class="detail-card landing-map-card landing-map-card-samples">
             <div class="landing-map-tag">Catalog edge</div>
-            <div class="landing-map-title">Samples &amp; Intake</div>
-            <p class="muted">Inspect sample rows in the catalog, then move into artifact intake when you need to confirm a hash, inspect queue pressure, or submit new work.</p>
+            <div class="landing-map-title">Malware Samples &amp; Intake</div>
+            <p class="muted">Inspect malware sample rows first, then move into workspace intake tools when you need to confirm a hash, inspect queue pressure, or submit new work.</p>
             <div class="landing-actions">
-                <a class="btn" href="<?= h(page_url('samples')) ?>">Samples</a>
+                <a class="btn" href="<?= h(page_url('malware_samples')) ?>">Malware Samples</a>
                 <a class="btn" href="<?= h(page_url('check_hash')) ?>">Check Hash</a>
                 <a class="btn" href="<?= h(page_url('ingest_backlog')) ?>">Ingest Backlog</a>
                 <a class="btn" href="<?= h(page_url('submit_artifact')) ?>">Submit Artifact</a>

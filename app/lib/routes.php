@@ -16,20 +16,21 @@ function app_route_manifest(): array
     $manifest = [
         'landing' => [
             'label' => 'Home',
-            'section' => 'Console',
+            'section' => 'Threat Workspace',
             'nav_section' => 'console',
             'view' => __DIR__ . '/../views/landing.php',
             'scripts' => ['assets/js/pages/landing_page.js'],
         ],
-        'samples' => [
-            'label' => 'Samples',
-            'section' => 'Malware Catalog',
+        'malware_samples' => [
+            'label' => 'Malware Samples',
+            'section' => 'Threat Workspace',
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/samples.php',
+            'aliases' => ['samples'],
         ],
         'sample' => [
             'label' => 'Sample Detail',
-            'section' => 'Malware Catalog',
+            'section' => 'Threat Workspace',
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/sample_detail.php',
             'aliases' => ['sample_detail'],
@@ -40,14 +41,12 @@ function app_route_manifest(): array
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/family_taxonomy_check.php',
             'scripts' => ['assets/js/family_taxonomy_shared.js', 'assets/js/pages/family_taxonomy_check_page.js'],
-            'aliases' => ['taxonomy_overview'],
         ],
         'family_taxonomy_gaps' => [
             'label' => 'Coverage & Gaps',
             'section' => 'Taxonomy & Repair',
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/family_taxonomy_gaps.php',
-            'aliases' => ['taxonomy_coverage', 'taxonomy_coverage_gaps', 'taxonomy_gaps'],
         ],
         'family_taxonomy_queue' => [
             'label' => 'Repair Queue',
@@ -70,14 +69,12 @@ function app_route_manifest(): array
             'section' => 'Taxonomy & Repair',
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/family_taxonomy_conflicts.php',
-            'aliases' => ['taxonomy_conflicts', 'taxonomy_governance'],
         ],
         'family_taxonomy_signal_hygiene' => [
             'label' => 'Signal Hygiene',
             'section' => 'Taxonomy & Repair',
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/family_taxonomy_signal_hygiene.php',
-            'aliases' => ['taxonomy_signal_hygiene'],
         ],
         'dataset_readiness' => [
             'label' => 'Dataset Readiness',
@@ -112,26 +109,29 @@ function app_route_manifest(): array
         ],
         'check_hash' => [
             'label' => 'Check Hash',
-            'section' => 'Artifact Intake',
+            'section' => 'Threat Workspace',
             'nav_section' => 'intake',
             'view' => __DIR__ . '/../views/check_hash.php',
             'scripts' => ['assets/js/pages/check_hash_page.js'],
-            'aliases' => ['artifact_intake_lookup'],
         ],
         'ingest_backlog' => [
             'label' => 'Ingest Backlog',
-            'section' => 'Artifact Intake',
+            'section' => 'Threat Workspace',
             'nav_section' => 'intake',
             'view' => __DIR__ . '/../views/ingest_backlog.php',
-            'aliases' => ['artifact_intake_backlog'],
+        ],
+        'pending_source_mix' => [
+            'label' => 'Pending Source Mix',
+            'section' => 'Threat Workspace',
+            'nav_section' => 'console',
+            'view' => __DIR__ . '/../views/pending_source_mix.php',
         ],
         'submit_artifact' => [
             'label' => 'Submit Artifact',
-            'section' => 'Artifact Intake',
+            'section' => 'Threat Workspace',
             'nav_section' => 'intake',
             'view' => __DIR__ . '/../views/submit_artifact.php',
             'scripts' => ['assets/js/pages/submit_artifact_page.js'],
-            'aliases' => ['artifact_intake_submit'],
         ],
         'permissions_overview' => [
             'label' => 'Permission Overview',
@@ -206,40 +206,32 @@ function app_route_manifest(): array
             'view' => __DIR__ . '/../views/permissions_review.php',
         ],
         'health' => [
-            'label' => 'VT & Pipeline Health',
-            'section' => 'VT Pipeline',
+            'label' => 'Pipeline Health',
+            'section' => 'VirusTotal API',
             'nav_section' => 'pipeline',
             'view' => __DIR__ . '/../views/health.php',
             'scripts' => ['assets/js/pages/health_page.js'],
-            'aliases' => ['vt_key_status'],
         ],
         'runs' => [
             'label' => 'Run Ledger',
-            'section' => 'VT Pipeline',
+            'section' => 'VirusTotal API',
             'nav_section' => 'pipeline',
             'view' => __DIR__ . '/../views/runs.php',
             'nav_hidden' => true,
         ],
         'vt_snapshot_inventory' => [
-            'label' => 'VT Snapshot Inventory',
-            'section' => 'VT Pipeline',
+            'label' => 'Snapshot Inventory',
+            'section' => 'VirusTotal API',
             'nav_section' => 'pipeline',
             'view' => __DIR__ . '/../views/vt_snapshot_inventory.php',
             'nav_hidden' => true,
         ],
         'vt_confidence' => [
             'label' => 'VT Confidence',
-            'section' => 'VT Pipeline',
+            'section' => 'VirusTotal API',
             'nav_section' => 'pipeline',
             'view' => __DIR__ . '/../views/vt_confidence.php',
             'enabled' => $phase2,
-        ],
-        'vt_ops_dashboard' => [
-            'label' => 'VT Ops Dashboard',
-            'section' => 'VT Pipeline',
-            'nav_section' => 'pipeline',
-            'view' => __DIR__ . '/../views/vt_ops_dashboard.php',
-            'aliases' => ['phase3_ops_dashboard', 'vt_apply_audit_history', 'phase3_audit_history', 'vt_evidence_packs', 'phase3_evidence_packs'],
         ],
         'settings' => [
             'label' => 'Settings',
@@ -268,14 +260,6 @@ function app_route_manifest(): array
             'nav_section' => 'admin',
             'view' => __DIR__ . '/../views/admin_diagnostics.php',
             'enabled' => $phase3,
-            'aliases' => ['admin_smoke'],
-        ],
-        'vt_key_controls' => [
-            'label' => 'VT Key Drilldown',
-            'section' => 'VT Pipeline',
-            'nav_section' => 'pipeline',
-            'view' => __DIR__ . '/../views/vt_key_controls.php',
-            'aliases' => ['vt_key_ops'],
         ],
     ];
 
@@ -356,10 +340,10 @@ function app_nav_section_blueprint(): array
     return [
         [
             'key' => 'console',
-            'label' => 'Workspace',
+            'label' => 'Threat Workspace',
             'default_collapsed' => false,
             'groups' => [
-                'core' => ['label' => 'Core'],
+                'core' => ['label' => null],
             ],
         ],
         [
@@ -382,14 +366,6 @@ function app_nav_section_blueprint(): array
             ],
         ],
         [
-            'key' => 'intake',
-            'label' => 'Artifact Intake',
-            'default_collapsed' => true,
-            'groups' => [
-                'queue' => ['label' => 'Queue & submission'],
-            ],
-        ],
-        [
             'key' => 'permissions',
             'label' => 'Permission Intel',
             'default_collapsed' => true,
@@ -401,7 +377,7 @@ function app_nav_section_blueprint(): array
         ],
         [
             'key' => 'pipeline',
-            'label' => 'VT Pipeline',
+            'label' => 'VirusTotal API',
             'default_collapsed' => true,
             'groups' => [
                 'operate' => ['label' => 'Operate'],
@@ -424,7 +400,11 @@ function app_nav_route_overrides(): array
 {
     return [
         'landing' => ['section' => 'console', 'group' => 'core', 'order' => 10, 'label' => 'Home'],
-        'samples' => ['section' => 'malware', 'group' => 'catalog', 'order' => 10],
+        'malware_samples' => ['section' => 'console', 'group' => 'core', 'order' => 20],
+        'check_hash' => ['section' => 'console', 'group' => 'core', 'order' => 30],
+        'submit_artifact' => ['section' => 'console', 'group' => 'core', 'order' => 40],
+        'ingest_backlog' => ['section' => 'console', 'group' => 'core', 'order' => 50],
+        'pending_source_mix' => ['section' => 'console', 'group' => 'core', 'order' => 60, 'label' => 'Pending Source Mix'],
 
         'family_taxonomy_check' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 10, 'label' => 'Taxonomy Workspace'],
         'family_taxonomy_gaps' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 20, 'priority' => 20],
@@ -439,10 +419,6 @@ function app_nav_route_overrides(): array
         'authority_consistency_debt' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 40],
         'dataset_exports' => ['section' => 'dataset', 'group' => 'release', 'order' => 10, 'label' => 'Export Readiness'],
 
-        'check_hash' => ['section' => 'intake', 'group' => 'queue', 'order' => 10],
-        'ingest_backlog' => ['section' => 'intake', 'group' => 'queue', 'order' => 20],
-        'submit_artifact' => ['section' => 'intake', 'group' => 'queue', 'order' => 30],
-
         'permissions_overview' => ['section' => 'permissions', 'group' => 'operate', 'order' => 10],
         'permissions_triage' => ['section' => 'permissions', 'group' => 'operate', 'order' => 20, 'priority' => 50],
         'permissions_review' => ['section' => 'permissions', 'group' => 'operate', 'order' => 30],
@@ -456,11 +432,9 @@ function app_nav_route_overrides(): array
         'permissions_oem_permissions' => ['section' => 'permissions', 'group' => 'reference', 'order' => 40],
 
         'health' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 10, 'label' => 'Pipeline Health', 'priority' => 10],
-        'vt_ops_dashboard' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 20, 'label' => 'Evidence Ops'],
         'vt_confidence' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 30],
         'runs' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 10],
         'vt_snapshot_inventory' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 20, 'label' => 'Snapshot Inventory'],
-        'vt_key_controls' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 30, 'label' => 'VT Key Drilldown'],
 
         'stack_audit' => ['section' => 'admin', 'group' => 'structure', 'order' => 10],
         'schema_inventory' => ['section' => 'admin', 'group' => 'structure', 'order' => 20],

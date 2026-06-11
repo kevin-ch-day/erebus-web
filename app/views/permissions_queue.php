@@ -26,7 +26,7 @@ $queryLimit = max(1, (int)($_GET['limit'] ?? 25));
         <div class="page-hero-actions">
             <a class="btn" href="<?= h(page_url('permissions_overview')) ?>">Back to Overview</a>
             <a class="btn" href="<?= h(page_url('permissions_triage')) ?>">Open Triage</a>
-            <a class="btn" href="<?= h(page_url('health')) ?>">VT &amp; Pipeline Health</a>
+            <a class="btn" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
         </div>
     </div>
 </section>

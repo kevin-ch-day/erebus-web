@@ -24,6 +24,8 @@
     if (endpoint) {
       let fmt = function(value, fallback = "NULL") {
         return value === null || value === void 0 || value === "" ? fallback : String(value);
+      }, formatUtcCompact = function(value) {
+        return value ? formatUtc(value).replace(/,\s*/g, " ").replace(/\s+\d{4}\b/, "") : "--";
       }, metricFmt = function(value, fallback = "--") {
         if (value === null || value === void 0 || value === "") return fallback;
         const num = Number(value);
@@ -44,8 +46,8 @@
             value: isHold ? "Blocked" : "Clear",
             tone: isHold ? "warn" : "ok",
             body: isHold ? `Hold until ${esc(`${formatUtc(holdUntil)} ${displayTz}`)} | reason ${esc(fmt(holdReason))}` : "No active hold is blocking enrichment right now.",
-            actionHref: vtKeyDrilldownUrl,
-            actionLabel: "Open VT Key Drilldown"
+            actionHref: "#vt-key-posture",
+            actionLabel: "Review VT key posture"
           },
           {
             title: "Scheduler pressure",
@@ -212,7 +214,6 @@
         const keys = asRows(vtKeyStatus?.keys);
 
         renderTile(vtKeyTotalEl, metricFmt(posture.total_keys));
-        renderTile(vtKeyEnabledVisibleEl, metricFmt(posture.enabled_visible_keys));
         renderTile(vtKeyEligibleEl, metricFmt(posture.eligible_keys));
         renderTile(vtKeyCoolingEl, metricFmt(posture.cooling_keys));
         renderTile(vtKeyQuotaBlockedEl, metricFmt(posture.quota_blocked_keys));
@@ -220,34 +221,26 @@
         renderTile(vtKeyTotalRemainingEl, metricFmt(posture.total_remaining_quota));
         renderTile(vtKeyEligibleRemainingEl, metricFmt(posture.eligible_remaining_quota));
         if (vtKeyHoldUntilLabelEl) vtKeyHoldUntilLabelEl.textContent = hold.active_hold ? "Hold until" : "Last hold expired";
-        renderTile(vtKeyHoldUntilEl, hold.hold_until_utc ? `${formatUtc(hold.hold_until_utc)} ${displayTz}` : "--");
+        renderTile(vtKeyHoldUntilEl, hold.hold_until_utc ? formatUtcCompact(hold.hold_until_utc) : "--");
         renderTile(vtKeyHoldReasonEl, hold.active_hold ? fmt(hold.hold_reason_code, "--") : "No active hold");
         renderTile(vtKeyLast429KeyEl, fmt(hold.last_429_key_id, "--"));
-        renderTile(vtKeyLast429EndpointEl, fmt(hold.last_429_endpoint, "--"));
         renderTile(vtKeyLast429RetryEl, metricFmt(hold.last_429_retry_after_seconds));
-        renderTile(vtKeySupportsLeasesEl, vtKeyStatus?.supports_leases ? "yes" : "no");
 
         if (!vtKeyBodyEl) return;
         if (!keys.length) {
-          vtKeyBodyEl.innerHTML = '<tr><td colspan="11" class="muted">No VT keys configured.</td></tr>';
+          vtKeyBodyEl.innerHTML = '<tr><td colspan="6" class="muted">No VT keys configured.</td></tr>';
           return;
         }
 
         vtKeyBodyEl.innerHTML = keys.map((row) => {
           const keyLabel = `#${fmt(row.api_key_id, "--")} • ${fmt(row.last6, "--")}`;
-          const enabled = Number(row.is_enabled || 0) === 1 ? "yes" : "no";
-          const visible = Number(row.is_visible || 0) === 1 ? "yes" : "no";
           return `
             <tr>
               <td>${esc(keyLabel)}</td>
               <td>${esc(humanizeKeyStatus(row.operator_status))}</td>
-              <td>${esc(enabled)}</td>
-              <td>${esc(visible)}</td>
-              <td>${esc(metricFmt(row.daily_quota_limit))}</td>
               <td>${esc(metricFmt(row.remaining_quota))}</td>
-              <td>${esc(fmt(row.quota_day_utc, "--"))}</td>
-              <td>${esc(row.cooldown_until_utc ? `${formatUtc(row.cooldown_until_utc)} ${displayTz}` : "--")}</td>
-              <td>${esc(row.last_429_at_utc ? `${formatUtc(row.last_429_at_utc)} ${displayTz}` : "--")}</td>
+              <td>${esc(row.cooldown_until_utc ? formatUtcCompact(row.cooldown_until_utc) : "--")}</td>
+              <td>${esc(row.last_429_at_utc ? formatUtcCompact(row.last_429_at_utc) : "--")}</td>
               <td>${esc(metricFmt(row.last_429_retry_after_seconds))}</td>
             </tr>
           `;
@@ -378,7 +371,6 @@
       const familyTaxonomyCatalogOnlyEl = document.getElementById("family-taxonomy-catalog-only");
       const familyTaxonomyHighConflictEl = document.getElementById("family-taxonomy-high-conflict");
       const vtKeyTotalEl = document.getElementById("vt-key-total");
-      const vtKeyEnabledVisibleEl = document.getElementById("vt-key-enabled-visible");
       const vtKeyEligibleEl = document.getElementById("vt-key-eligible");
       const vtKeyCoolingEl = document.getElementById("vt-key-cooling");
       const vtKeyQuotaBlockedEl = document.getElementById("vt-key-quota-blocked");
@@ -389,9 +381,7 @@
       const vtKeyHoldUntilEl = document.getElementById("vt-key-hold-until");
       const vtKeyHoldReasonEl = document.getElementById("vt-key-hold-reason");
       const vtKeyLast429KeyEl = document.getElementById("vt-key-last-429-key");
-      const vtKeyLast429EndpointEl = document.getElementById("vt-key-last-429-endpoint");
       const vtKeyLast429RetryEl = document.getElementById("vt-key-last-429-retry");
-      const vtKeySupportsLeasesEl = document.getElementById("vt-key-supports-leases");
       const vtKeyBodyEl = document.getElementById("vt-key-body");
       const catalogPrimaryEl = document.getElementById("catalog-primary");
       const catalogPermissionIntelEl = document.getElementById("catalog-permission-intel");
@@ -413,7 +403,6 @@
       const formatUtc = App.formatUtc;
       const displayTz = App.getDisplayTz();
       const ingestBacklogUrl = App.pageUrl("ingest_backlog");
-      const vtKeyDrilldownUrl = App.pageUrl("vt_key_controls");
       const permissionsOverviewUrl = App.pageUrl("permissions_overview");
       const familyTaxonomyUrl = App.pageUrl("family_taxonomy_check");
       function applyHealthPayload(res, includeDiagnostics) {

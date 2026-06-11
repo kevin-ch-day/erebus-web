@@ -19,6 +19,8 @@ $ingestEndpoint = api_url('artifact_ingest_queue.php');
             alt="Artifact intake" />
     </div>
     <div class="page-hero-body">
+        <div class="eyebrow">Threat Workspace</div>
+        <div class="page-kicker">Manual queue submission</div>
         <h1 class="page-hero-title">Submit Artifact</h1>
         <p class="page-hero-lede muted">
             Bulk addition of artifacts for ingestion into the collection.

@@ -24,14 +24,14 @@ $pageScripts = [
 
 <section class="page-hero">
     <div class="page-hero-body">
-        <div class="eyebrow">Malware Catalog</div>
-        <div class="page-kicker">Sample inspection and local catalog context</div>
+        <div class="eyebrow">Threat Workspace</div>
+        <div class="page-kicker">Malware sample inspection and local catalog context</div>
         <h1 class="page-hero-title">Sample Detail</h1>
         <p class="page-hero-lede muted">
             Detailed sample view for catalog state, VT workflow, and Android permission context. Use this page for sample inspection; authority-ready taxonomy interpretation lives on the dedicated dataset and taxonomy pages.
         </p>
         <div class="page-hero-actions">
-            <a class="btn" href="<?= h(page_url('samples')) ?>">Back to Samples</a>
+            <a class="btn" href="<?= h(page_url('malware_samples')) ?>">Back to Malware Samples</a>
             <a class="btn" href="<?= h(page_url('family_taxonomy_queue', ['platform' => 'android'])) ?>">Repair Queue</a>
             <a class="btn" href="<?= h(page_url('label_surfaces')) ?>">Label Surfaces</a>
             <button class="btn btn-muted" type="button" id="sample-reload">Reload sample</button>

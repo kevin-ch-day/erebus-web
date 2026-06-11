@@ -6,7 +6,7 @@ require_once __DIR__ . '/../lib/app_config.php';
 require_once __DIR__ . '/../lib/url.php';
 require_once __DIR__ . '/../lib/time.php';
 
-$title = "Samples";
+$title = "Malware Samples";
 $queryStatus = trim((string)($_GET['status'] ?? ''));
 $queryFamily = trim((string)($_GET['family'] ?? ''));
 $queryFamilyAlignment = trim((string)($_GET['family_alignment'] ?? ''));
@@ -35,9 +35,9 @@ $pageScripts = [
 
 <section class="page-hero">
     <div class="page-hero-body">
-        <div class="eyebrow">Malware Catalog</div>
-        <div class="page-kicker">Broad sample lookup and workflow inventory</div>
-        <h1 class="page-hero-title">Samples</h1>
+        <div class="eyebrow">Threat Workspace</div>
+        <div class="page-kicker">Sample lookup and workflow inventory</div>
+        <h1 class="page-hero-title">Malware Samples</h1>
         <p class="page-hero-lede muted">
             Catalog inventory and VT workflow state. Use this page for broad sample lookup, then move to row-level authority or taxonomy pages when you need curation decisions.
         </p>

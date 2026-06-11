@@ -7,7 +7,7 @@ require_once __DIR__ . '/../lib/url.php';
 require_once __DIR__ . '/../lib/time.php';
 require_once __DIR__ . '/../database/db_func.php';
 
-$title = "VT & Pipeline Health";
+$title = "Pipeline Health";
 
 $healthApiUrl = api_url('health.php');
 $healthDiagnosticsApiUrl = api_url('health.php') . '?include_diagnostics=1';
@@ -38,16 +38,12 @@ $fmtInt = static function ($value, string $fallback = '--'): string {
     return (string)$value;
 };
 
-$fmtBool = static function ($value): string {
-    return ((int)$value) === 1 ? 'yes' : 'no';
-};
-
-$fmtUtcDisplay = static function ($value, string $fallback = '--'): string {
-    $formatted = fmt_utc_display($value, 'M d Y g:i A');
+$fmtUtcCompact = static function ($value, string $fallback = '--'): string {
+    $formatted = fmt_utc_display($value, 'M d g:i A');
     if ($formatted === '') {
         return $fallback;
     }
-    return $formatted . ' ' . tz_current_id();
+    return $formatted;
 };
 
 $fmtKeyStatus = static function ($value): string {
@@ -77,15 +73,15 @@ $reasonBreakdown = is_array($metrics['reason_breakdown'] ?? null) ? $metrics['re
 $headsMatch = (bool)($schemaHeads['heads_match'] ?? false);
 $primaryHead = (string)($schemaHeads['primary_head'] ?? '');
 $permissionIntelHead = (string)($schemaHeads['permission_intel_head'] ?? '');
-$topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBreakdown[0]['reason_code'] : '';
 
 ?>
 
+<div class="health-page-shell">
 <section class="page-hero">
     <div class="page-hero-body">
         <div class="eyebrow">VT State First</div>
         <div class="page-kicker">Pipeline control surface</div>
-        <h1 class="page-hero-title">VT &amp; Pipeline Health</h1>
+        <h1 class="page-hero-title">Pipeline Health</h1>
         <p class="page-hero-lede muted">
             Start here when VirusTotal enrichment is blocked, idle, unexpectedly quiet, or producing workflow residue.
             DB logic is UTC; timestamps are displayed in your selected timezone.
@@ -123,7 +119,7 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
 <div id="health-page" style="display:none;"
      data-endpoint="<?= h($healthApiUrl) ?>"
      data-diagnostics-endpoint="<?= h($healthDiagnosticsApiUrl) ?>"
-     data-samples-base="<?= h(page_url('samples')) ?>"
+     data-samples-base="<?= h(page_url('malware_samples')) ?>"
      data-refresh-seconds="<?= (int)DASHBOARD_REFRESH_SECONDS ?>"
      data-diagnostics-refresh-seconds="300"></div>
 
@@ -131,10 +127,10 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">Current blockers</h2>
-            <p class="section-shell-copy">Promote the issues that are actually stopping clean interpretation: VT hold state, queue pressure, key capacity, and catalog split drift.</p>
+            <p class="section-shell-copy">Start with the blockers that actually stop clean interpretation: VT hold state, queue pressure, key capacity, and schema drift.</p>
         </div>
     </div>
-    <div class="detail-grid" id="health-blockers-grid">
+    <div class="detail-grid health-blockers-grid" id="health-blockers-grid">
         <div class="detail-card">
             <div class="detail-card-title">VT hold state</div>
             <div class="detail-value"><?= h($isHoldActive ? 'Blocked' : 'Clear') ?></div>
@@ -170,15 +166,12 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">VT state</h2>
-            <p class="section-shell-copy">This is the live status pane. Treat it as the web equivalent of “can enrichment move right now?”</p>
+            <p class="section-shell-copy">Treat this as the web answer to one question: can enrichment move right now?</p>
         </div>
         <div class="flow-inline">
-            <?php if (defined('FEATURE_PHASE3_OPS') && FEATURE_PHASE3_OPS): ?>
-                <a class="btn" href="<?= h(page_url('vt_key_controls')) ?>">VT Key Controls</a>
-            <?php endif; ?>
             <a class="btn" href="#vt-key-posture">VT Key Posture</a>
             <a class="btn" href="<?= h(page_url('permissions_drift')) ?>">Drift Details</a>
-            <a class="btn" href="<?= h(page_url('vt_snapshot_inventory')) ?>">VT Snapshot Inventory</a>
+            <a class="btn" href="<?= h(page_url('vt_snapshot_inventory')) ?>">Snapshot Inventory</a>
         </div>
     </div>
     <div class="health-stoplight <?= $isHoldActive ? 'health-stoplight-hold' : 'health-stoplight-ok' ?>" id="health-stoplight">
@@ -191,68 +184,89 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">VT key posture</h2>
-            <p class="section-shell-copy">This page now owns the read-only VT key surface. Use key controls only when you need a write-capable operator action.</p>
-        </div>
-        <div class="flow-inline">
-            <a class="btn" href="<?= h(page_url('vt_ops_dashboard')) ?>">Open VT Ops Dashboard</a>
-            <?php if (defined('FEATURE_PHASE3_OPS') && FEATURE_PHASE3_OPS): ?>
-                <a class="btn" href="<?= h(page_url('vt_key_controls')) ?>">Open VT Key Controls</a>
-            <?php endif; ?>
+            <p class="section-shell-copy">This page now owns the read-only VT key surface.</p>
         </div>
     </div>
-    <div class="detail-grid">
-        <div class="detail-card">
+    <div class="muted health-inline-note">Display times use <?= h(tz_current_id()) ?>. Daily quota resets at 12:00 AM UTC.</div>
+    <div class="vt-key-posture-grid">
+        <div class="detail-card vt-key-summary-card">
             <div class="detail-card-title">Key summary</div>
-            <div class="detail-row"><div class="detail-label">Total keys</div><div class="detail-value" id="vt-key-total"><?= h($fmtInt($vtKeyPosture['total_keys'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Enabled + visible</div><div class="detail-value" id="vt-key-enabled-visible"><?= h($fmtInt($vtKeyPosture['enabled_visible_keys'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Eligible keys</div><div class="detail-value" id="vt-key-eligible"><?= h($fmtInt($vtKeyPosture['eligible_keys'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Cooling keys</div><div class="detail-value" id="vt-key-cooling"><?= h($fmtInt($vtKeyPosture['cooling_keys'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Quota blocked</div><div class="detail-value" id="vt-key-quota-blocked"><?= h($fmtInt($vtKeyPosture['quota_blocked_keys'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Leased keys</div><div class="detail-value" id="vt-key-leased"><?= h($fmtInt($vtKeyPosture['leased_keys'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Total remaining quota</div><div class="detail-value" id="vt-key-total-remaining"><?= h($fmtInt($vtKeyPosture['total_remaining_quota'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Eligible remaining</div><div class="detail-value" id="vt-key-eligible-remaining"><?= h($fmtInt($vtKeyPosture['eligible_remaining_quota'] ?? null)) ?></div></div>
+            <div class="vt-key-metric-grid">
+                <div class="vt-key-metric">
+                    <div class="vt-key-metric-label">Total keys</div>
+                    <div class="vt-key-metric-value" id="vt-key-total"><?= h($fmtInt($vtKeyPosture['total_keys'] ?? null)) ?></div>
+                </div>
+                <div class="vt-key-metric">
+                    <div class="vt-key-metric-label">Eligible</div>
+                    <div class="vt-key-metric-value" id="vt-key-eligible"><?= h($fmtInt($vtKeyPosture['eligible_keys'] ?? null)) ?></div>
+                </div>
+                <div class="vt-key-metric">
+                    <div class="vt-key-metric-label">Cooling</div>
+                    <div class="vt-key-metric-value" id="vt-key-cooling"><?= h($fmtInt($vtKeyPosture['cooling_keys'] ?? null)) ?></div>
+                </div>
+                <div class="vt-key-metric">
+                    <div class="vt-key-metric-label">Quota blocked</div>
+                    <div class="vt-key-metric-value" id="vt-key-quota-blocked"><?= h($fmtInt($vtKeyPosture['quota_blocked_keys'] ?? null)) ?></div>
+                </div>
+                <div class="vt-key-metric">
+                    <div class="vt-key-metric-label">Leased</div>
+                    <div class="vt-key-metric-value" id="vt-key-leased"><?= h($fmtInt($vtKeyPosture['leased_keys'] ?? null)) ?></div>
+                </div>
+                <div class="vt-key-metric">
+                    <div class="vt-key-metric-label">Total remaining</div>
+                    <div class="vt-key-metric-value" id="vt-key-total-remaining"><?= h($fmtInt($vtKeyPosture['total_remaining_quota'] ?? null)) ?></div>
+                </div>
+                <div class="vt-key-metric">
+                    <div class="vt-key-metric-label">Eligible remaining</div>
+                    <div class="vt-key-metric-value" id="vt-key-eligible-remaining"><?= h($fmtInt($vtKeyPosture['eligible_remaining_quota'] ?? null)) ?></div>
+                </div>
+            </div>
         </div>
-        <div class="detail-card">
+        <div class="detail-card vt-key-hold-card">
             <div class="detail-card-title">Hold &amp; last 429</div>
-            <div class="detail-row"><div class="detail-label">Current hold</div><div class="detail-value" id="vt-key-hold-reason"><?= h($vtActiveHold ? $fmtValue($vtHold['hold_reason_code'] ?? null) : 'No active hold') ?></div></div>
-            <div class="detail-row"><div class="detail-label" id="vt-key-hold-until-label"><?= h($vtActiveHold ? 'Hold until' : 'Last hold expired') ?></div><div class="detail-value" id="vt-key-hold-until"><?= h($vtActiveHold ? $fmtUtcDisplay($vtHold['hold_until_utc'] ?? null) : $fmtUtcDisplay($vtHold['hold_until_utc'] ?? null, '--')) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Last 429 key</div><div class="detail-value" id="vt-key-last-429-key"><?= h($fmtValue($vtHold['last_429_key_id'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Last 429 endpoint</div><div class="detail-value" id="vt-key-last-429-endpoint"><?= h($fmtValue($vtHold['last_429_endpoint'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Retry-after s</div><div class="detail-value" id="vt-key-last-429-retry"><?= h($fmtInt($vtHold['last_429_retry_after_seconds'] ?? null)) ?></div></div>
-            <div class="detail-row"><div class="detail-label">Supports leases</div><div class="detail-value" id="vt-key-supports-leases"><?= h(($vtKeyStatus['supports_leases'] ?? false) ? 'yes' : 'no') ?></div></div>
+            <div class="vt-key-hold-stack">
+                <div class="vt-key-hold-item">
+                    <div class="detail-label">Current hold</div>
+                    <div class="detail-value" id="vt-key-hold-reason"><?= h($vtActiveHold ? $fmtValue($vtHold['hold_reason_code'] ?? null) : 'No active hold') ?></div>
+                </div>
+                <div class="vt-key-hold-item">
+                    <div class="detail-label" id="vt-key-hold-until-label"><?= h($vtActiveHold ? 'Hold until' : 'Last hold expired') ?></div>
+                    <div class="detail-value" id="vt-key-hold-until"><?= h($vtActiveHold ? $fmtUtcCompact($vtHold['hold_until_utc'] ?? null) : $fmtUtcCompact($vtHold['hold_until_utc'] ?? null, '--')) ?></div>
+                </div>
+                <div class="vt-key-hold-item">
+                    <div class="detail-label">Last 429 key</div>
+                    <div class="detail-value" id="vt-key-last-429-key"><?= h($fmtValue($vtHold['last_429_key_id'] ?? null)) ?></div>
+                </div>
+                <div class="vt-key-hold-item">
+                    <div class="detail-label">Retry s</div>
+                    <div class="detail-value" id="vt-key-last-429-retry"><?= h($fmtInt($vtHold['last_429_retry_after_seconds'] ?? null)) ?></div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="table-scroll" style="margin-top: 16px;">
-        <table class="table">
+    <div class="table-scroll health-key-table-scroll" style="margin-top: 16px;">
+        <table class="table health-key-table">
             <thead>
                 <tr>
                     <th>Key</th>
                     <th>Status</th>
-                    <th>Enabled</th>
-                    <th>Visible</th>
-                    <th>Daily quota</th>
                     <th>Remaining</th>
-                    <th>Quota day (UTC)</th>
-                    <th>Cooldown until (UTC)</th>
-                    <th>Last 429 at (UTC)</th>
-                    <th>Retry-after s</th>
+                    <th>Cooldown</th>
+                    <th>Last 429</th>
+                    <th>Retry s</th>
                 </tr>
             </thead>
             <tbody id="vt-key-body">
                 <?php if ($vtKeys === []): ?>
-                    <tr><td colspan="11" class="muted">No VT keys configured.</td></tr>
+                    <tr><td colspan="6" class="muted">No VT keys configured.</td></tr>
                 <?php else: ?>
                     <?php foreach ($vtKeys as $row): ?>
                         <tr>
                             <td><?= h('#' . $fmtValue($row['api_key_id'] ?? null) . ' • ' . $fmtValue($row['last6'] ?? null)) ?></td>
                             <td><?= h($fmtKeyStatus($row['operator_status'] ?? null)) ?></td>
-                            <td><?= h($fmtBool($row['is_enabled'] ?? 0)) ?></td>
-                            <td><?= h($fmtBool($row['is_visible'] ?? 0)) ?></td>
-                            <td><?= h($fmtInt($row['daily_quota_limit'] ?? null)) ?></td>
                             <td><?= h($fmtInt($row['remaining_quota'] ?? null)) ?></td>
-                            <td><?= h($fmtValue($row['quota_day_utc'] ?? null)) ?></td>
-                            <td><?= h($fmtUtcDisplay($row['cooldown_until_utc'] ?? null)) ?></td>
-                            <td><?= h($fmtUtcDisplay($row['last_429_at_utc'] ?? null)) ?></td>
+                            <td><?= h($fmtUtcCompact($row['cooldown_until_utc'] ?? null)) ?></td>
+                            <td><?= h($fmtUtcCompact($row['last_429_at_utc'] ?? null)) ?></td>
                             <td><?= h($fmtInt($row['last_429_retry_after_seconds'] ?? null)) ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -266,7 +280,7 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">Scheduler pressure</h2>
-            <p class="section-shell-copy">Use these counts to separate hold/pacing problems from retry backlog, stale claims, or simply no eligible work.</p>
+            <p class="section-shell-copy">Use these counts to separate hold and pacing problems from retry backlog, stale claims, or simply no eligible work.</p>
         </div>
     </div>
     <div class="health-tiles">
@@ -292,11 +306,11 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
         </div>
     </div>
     <div class="health-reasons">
-        <h3>Top reasons</h3>
+        <h3>Top pending reasons</h3>
         <ol class="health-reasons-list" id="health-reasons-list">
             <?php foreach (array_slice($reasonBreakdown, 0, 5) as $reason): ?>
                 <li>
-                    <a class="health-reason-link" href="<?= h(page_url('samples', ['reason' => (string)($reason['reason_code'] ?? 'UNKNOWN')])) ?>"><?= h((string)($reason['reason_code'] ?? 'UNKNOWN')) ?></a>
+                    <a class="health-reason-link" href="<?= h(page_url('malware_samples', ['reason' => (string)($reason['reason_code'] ?? 'UNKNOWN')])) ?>"><?= h((string)($reason['reason_code'] ?? 'UNKNOWN')) ?></a>
                     <span class="badge"><?= h($fmtInt($reason['count'] ?? null, '0')) ?></span>
                 </li>
             <?php endforeach; ?>
@@ -309,31 +323,27 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">Operator paths</h2>
-            <p class="section-shell-copy">Use these only when the blocker cards and next-path notice are not already sufficient.</p>
+            <p class="section-shell-copy">Use this only when you need a quick route after the blocker cards.</p>
         </div>
     </div>
     <details>
         <summary class="muted">Open operator path reference</summary>
-        <div class="health-stage-grid" style="margin-top:16px;">
+        <div class="health-stage-grid health-stage-grid-compact" style="margin-top:16px;">
             <div class="health-stage surface-panel">
-                <div class="health-stage-label">If VT is blocked</div>
-                <strong>Stay on state and key truth first</strong>
-                <div class="muted">Check hold state, key availability, and recent run errors first before blaming downstream analytics or queue quality.</div>
+                <div class="health-stage-label">VT blocked</div>
+                <strong>Check hold state and key posture first.</strong>
             </div>
             <div class="health-stage surface-panel">
-                <div class="health-stage-label">If backlog is large</div>
-                <strong>Review intake pressure before asking for more VT work</strong>
-                <div class="muted">Open Ingest Backlog to confirm whether queued rows, processing residue, or recovery pressure are the real bottleneck.</div>
+                <div class="health-stage-label">Backlog large</div>
+                <strong>Open Ingest Backlog before asking for more VT work.</strong>
             </div>
             <div class="health-stage surface-panel">
-                <div class="health-stage-label">If PI backlog is growing</div>
-                <strong>Move into Permission Intel only after state is clear</strong>
-                <div class="muted">Go from Overview to Triage to Review only after VT state and intake pressure are understood.</div>
+                <div class="health-stage-label">PI backlog growing</div>
+                <strong>Move into Permission Intel only after VT state is clear.</strong>
             </div>
             <div class="health-stage surface-panel">
-                <div class="health-stage-label">If counts drift</div>
-                <strong>Use guards before manual cleanup</strong>
-                <div class="muted">Use schema heads, rollup guards, and workflow debt here before trusting cross-surface comparisons.</div>
+                <div class="health-stage-label">Counts drift</div>
+                <strong>Use schema and rollup guards before manual cleanup.</strong>
             </div>
         </div>
     </details>
@@ -343,41 +353,44 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">Catalog routing</h2>
-            <p class="section-shell-copy">Verify which MariaDB catalogs this web app is reading before interpreting Permission Intel counts.</p>
+            <p class="section-shell-copy">Reference only. Use this when count interpretation depends on which MariaDB catalogs the web app is reading.</p>
         </div>
     </div>
-    <div class="detail-grid">
-        <div class="detail-card">
-            <div class="detail-card-title">Catalog map</div>
-            <div class="detail-row">
-                <div class="detail-label">Primary catalog</div>
-                <div class="detail-value" id="catalog-primary"><?= h($fmtValue($catalogs['primary'] ?? null)) ?></div>
+    <details>
+        <summary class="muted">Open catalog and schema routing details</summary>
+        <div class="detail-grid" style="margin-top:16px;">
+            <div class="detail-card">
+                <div class="detail-card-title">Catalog map</div>
+                <div class="detail-row">
+                    <div class="detail-label">Primary catalog</div>
+                    <div class="detail-value" id="catalog-primary"><?= h($fmtValue($catalogs['primary'] ?? null)) ?></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Permission Intel catalog</div>
+                    <div class="detail-value" id="catalog-permission-intel"><?= h($fmtValue($catalogs['permission_intel'] ?? null)) ?></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Split mode</div>
+                    <div class="detail-value" id="catalog-split-mode"><?= h(($catalogs['split_enabled'] ?? false) ? 'yes' : 'no') ?></div>
+                </div>
             </div>
-            <div class="detail-row">
-                <div class="detail-label">Permission Intel catalog</div>
-                <div class="detail-value" id="catalog-permission-intel"><?= h($fmtValue($catalogs['permission_intel'] ?? null)) ?></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Split mode</div>
-                <div class="detail-value" id="catalog-split-mode"><?= h(($catalogs['split_enabled'] ?? false) ? 'yes' : 'no') ?></div>
+            <div class="detail-card">
+                <div class="detail-card-title">Schema heads</div>
+                <div class="detail-row">
+                    <div class="detail-label">Primary head</div>
+                    <div class="detail-value" id="schema-head-primary"><?= h($fmtValue($schemaHeads['primary_head'] ?? null)) ?></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">PI head</div>
+                    <div class="detail-value" id="schema-head-pi"><?= h($fmtValue($schemaHeads['permission_intel_head'] ?? null)) ?></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Heads match</div>
+                    <div class="detail-value" id="schema-head-match"><?= h(($schemaHeads['heads_match'] ?? false) ? 'yes' : 'no') ?></div>
+                </div>
             </div>
         </div>
-        <div class="detail-card">
-            <div class="detail-card-title">Schema heads</div>
-            <div class="detail-row">
-                <div class="detail-label">Primary head</div>
-                <div class="detail-value" id="schema-head-primary"><?= h($fmtValue($schemaHeads['primary_head'] ?? null)) ?></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">PI head</div>
-                <div class="detail-value" id="schema-head-pi"><?= h($fmtValue($schemaHeads['permission_intel_head'] ?? null)) ?></div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Heads match</div>
-                <div class="detail-value" id="schema-head-match"><?= h(($schemaHeads['heads_match'] ?? false) ? 'yes' : 'no') ?></div>
-            </div>
-        </div>
-    </div>
+    </details>
 </section>
 
 <section class="section-shell" id="advanced-diagnostics-section" style="display:none;">
@@ -465,3 +478,4 @@ $topReasonCode = isset($reasonBreakdown[0]['reason_code']) ? (string)$reasonBrea
 </section>
 
 <div class="health-error" id="health-error"></div>
+</div>

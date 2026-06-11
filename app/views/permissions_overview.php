@@ -28,7 +28,7 @@ $pageScripts = [
             <?php if (defined('FEATURE_PHASE2B_READONLY') && FEATURE_PHASE2B_READONLY): ?>
                 <a class="btn" href="<?= h(page_url('analysis_fusion')) ?>">Analysis Fusion</a>
             <?php endif; ?>
-            <a class="btn" href="<?= h(page_url('health')) ?>">VT &amp; Pipeline Health</a>
+            <a class="btn" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
         </div>
     </div>
     <aside class="page-hero-side">
@@ -212,10 +212,10 @@ $pageScripts = [
         </article>
         <article class="perm-route-card surface-panel">
             <h3 class="perm-route-title">If counts or namespaces drift</h3>
-            <p class="muted">Open Drift or VT &amp; Pipeline Health to separate scheduler residue, derived-rollup drift, and real classification gaps.</p>
+            <p class="muted">Open Drift or Pipeline Health to separate scheduler residue, derived-rollup drift, and real classification gaps.</p>
             <div class="perm-route-links">
                 <a class="btn btn-small" href="<?= h(page_url('permissions_drift')) ?>">Open Drift</a>
-                <a class="btn btn-small btn-muted" href="<?= h(page_url('health')) ?>">VT &amp; Pipeline Health</a>
+                <a class="btn btn-small btn-muted" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
             </div>
         </article>
     </div>

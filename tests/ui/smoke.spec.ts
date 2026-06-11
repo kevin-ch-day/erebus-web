@@ -556,11 +556,11 @@ test('health page renders top reasons without console errors', async ({ page }) 
   expect(errors, `Console errors:\n${errors.join('\n')}`).toHaveLength(0);
 });
 
-test('samples page renders without console errors', async ({ page }) => {
+test('malware samples page renders without console errors', async ({ page }) => {
   const errors = trackConsoleErrors(page);
 
-  await page.goto('/index.php?p=samples');
-  await expect(page.locator('h1')).toContainText('Samples');
+  await page.goto('/index.php?p=malware_samples');
+  await expect(page.locator('h1')).toContainText('Malware Samples');
 
   expect(errors, `Console errors:\n${errors.join('\n')}`).toHaveLength(0);
 });

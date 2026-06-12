@@ -16,45 +16,50 @@ $updateApiUrl = api_url('sample_update.php');
 $pageScripts = [
     'assets/js/modules/sample_detail/sample_detail_formatters.js',
     'assets/js/modules/sample_detail/sample_summary_renderer.js',
+    'assets/js/modules/sample_detail/sample_permissions_csv.js',
+    'assets/js/modules/sample_detail/sample_permissions_renderers.js',
     'assets/js/modules/sample_detail/sample_permissions_controller.js',
     'assets/js/modules/sample_detail/sample_metadata_editor_modal.js',
+    'assets/js/modules/sample_detail/sample_detail_surface.js',
     'assets/js/pages/sample_detail_page.js',
 ];
 ?>
 
-<section class="page-hero">
-    <div class="page-hero-body">
+<section class="sample-detail-header sample-detail-shell">
+    <div class="sample-detail-header-main">
         <div class="eyebrow">Threat Workspace</div>
-        <div class="page-kicker">Malware sample inspection and local catalog context</div>
-        <h1 class="page-hero-title">Sample Detail</h1>
-        <p class="page-hero-lede muted">
-            Detailed sample view for catalog state, VT workflow, and Android permission context. Use this page for sample inspection; authority-ready taxonomy interpretation lives on the dedicated dataset and taxonomy pages.
-        </p>
-        <div class="page-hero-actions">
-            <a class="btn" href="<?= h(page_url('malware_samples')) ?>">Back to Malware Samples</a>
-            <a class="btn" href="<?= h(page_url('family_taxonomy_queue', ['platform' => 'android'])) ?>">Repair Queue</a>
-            <a class="btn" href="<?= h(page_url('label_surfaces')) ?>">Label Surfaces</a>
-            <button class="btn btn-muted" type="button" id="sample-reload">Reload sample</button>
+        <div class="sample-detail-context-note">Inspection surface only. Label authority lives on Label Surfaces. Queue follow-up lives on Repair Queue.</div>
+        <h1 class="sample-detail-title" id="sample-header-title">Sample Detail</h1>
+        <div class="sample-detail-subtitle muted" id="sample-header-subtitle">Loading sample identity and workflow state.</div>
+    </div>
+    <div class="sample-detail-header-actions">
+        <a class="btn" href="<?= h(page_url('malware_samples')) ?>">Back to Malware Samples</a>
+        <a class="btn" href="<?= h(page_url('family_taxonomy_queue', ['platform' => 'android'])) ?>">Repair Queue</a>
+        <a class="btn" href="<?= h(page_url('label_surfaces')) ?>">Label Surfaces</a>
+        <button class="btn btn-muted" type="button" id="sample-reload">Reload sample</button>
+    </div>
+    <div class="sample-inspection-strip" id="sample-inspection-strip">
+        <div class="sample-inspection-tile">
+            <div class="sample-inspection-label">Platform</div>
+            <div class="sample-inspection-value" id="sample-header-platform">--</div>
+        </div>
+        <div class="sample-inspection-tile">
+            <div class="sample-inspection-label">VT status</div>
+            <div class="sample-inspection-value" id="sample-header-vt-status">--</div>
+        </div>
+        <div class="sample-inspection-tile">
+            <div class="sample-inspection-label">Alignment</div>
+            <div class="sample-inspection-value" id="sample-header-alignment">--</div>
+        </div>
+        <div class="sample-inspection-tile">
+            <div class="sample-inspection-label">Last analysis</div>
+            <div class="sample-inspection-value" id="sample-header-last-analysis">--</div>
+        </div>
+        <div class="sample-inspection-tile sample-inspection-tile-wide">
+            <div class="sample-inspection-label">SHA-256</div>
+            <div class="sample-inspection-value mono" id="sample-header-sha256">--</div>
         </div>
     </div>
-    <aside class="page-hero-side">
-        <h2 class="page-hero-side-title">Interpretation</h2>
-        <p>Catalog fields shown here are useful inspection context, but they do not automatically become governed benchmark truth. Use <code>label_surfaces</code> and <code>type_benchmark</code> for authority-aware interpretation.</p>
-        <div class="hero-metric-grid">
-            <div class="hero-metric">
-                <div class="hero-metric-label">Inspection</div>
-                <div class="hero-metric-value">sample_detail</div>
-            </div>
-            <div class="hero-metric">
-                <div class="hero-metric-label">Row authority</div>
-                <div class="hero-metric-value">label_surfaces</div>
-            </div>
-            <div class="hero-metric">
-                <div class="hero-metric-label">Queue lane</div>
-                <div class="hero-metric-value">repair_queue</div>
-            </div>
-        </div>
-    </aside>
 </section>
 <div id="sample-detail-page" style="display:none;"
      data-detail-endpoint="<?= h($detailApiUrl) ?>"
@@ -64,11 +69,11 @@ $pageScripts = [
      data-sample-id="<?= h($sampleId) ?>"
      data-sha256="<?= h($sha256) ?>"></div>
 
-<section class="section-shell">
+<section class="section-shell sample-detail-shell">
     <div class="section-shell-header">
         <div>
-            <h2 class="section-shell-title">Sample Summary</h2>
-            <p class="muted">Local sample state, catalog fields, and VT workflow context.</p>
+            <h2 class="section-shell-title">Identity</h2>
+            <p class="muted">Catalog identity, hashes, and direct lookup links for this sample.</p>
         </div>
     </div>
     <div class="sample-summary" id="sample-summary">
@@ -76,115 +81,125 @@ $pageScripts = [
         <div class="sample-summary-meta muted">--</div>
     </div>
 
-    <div class="sample-detail-layout">
-        <div class="detail-grid" id="sample-core-grid"></div>
-
-        <section class="perm-section" id="sample-ops-section">
-            <div class="section-shell-header" style="margin-top: 18px;">
-                <div>
-                    <h2 class="section-shell-title">Operational Status</h2>
-                </div>
+    <section class="perm-section" id="sample-interpretation-section">
+        <div class="section-shell-header" style="margin-top: 18px;">
+            <div>
+                <h2 class="section-shell-title">Erebus Interpretation</h2>
+                <p class="muted">Current catalog classification and VT signal context for this sample.</p>
             </div>
-            <div class="detail-grid" id="sample-ops-grid"></div>
-        </section>
-    </div>
+        </div>
+        <div class="detail-grid sample-detail-grid" id="sample-core-grid"></div>
+    </section>
+
+    <section class="perm-section" id="sample-ops-section">
+        <div class="section-shell-header" style="margin-top: 18px;">
+            <div>
+                <h2 class="section-shell-title">VirusTotal</h2>
+            </div>
+        </div>
+        <div class="detail-grid sample-detail-grid" id="sample-ops-grid"></div>
+    </section>
 </section>
 
-<section class="perm-section" id="sample-platform-section">
+<section class="perm-section sample-detail-shell" id="sample-platform-section">
     <div class="section-shell-header" style="margin-top: 18px;">
         <div>
-            <h2 class="section-shell-title">Platform Context</h2>
+            <h2 class="section-shell-title">Processing Context</h2>
         </div>
     </div>
     <div class="notice info" id="sample-platform-note" style="display:none;"></div>
-    <div class="detail-grid" id="sample-platform-grid"></div>
+    <div class="detail-grid sample-detail-grid" id="sample-platform-grid"></div>
 </section>
 
-<section id="android-permissions-section">
+<section class="sample-detail-shell" id="android-permissions-section">
     <div class="section-shell-header" style="margin-top: 18px;">
         <div>
-            <h2 class="section-shell-title">Android Permissions</h2>
+            <h2 class="section-shell-title">Platform Evidence</h2>
+            <p class="muted">Platform-native metadata and enrichment surfaces appear here when Erebus has them.</p>
         </div>
     </div>
-    <div class="perm-header">
-        <div class="perm-meta">
-            <div class="perm-meta-title">Permission pipeline</div>
-            <div class="muted" id="perm-taxonomy">Taxonomy: --</div>
-            <div class="muted" id="perm-run-link"></div>
-        </div>
-        <div class="perm-actions">
-            <button class="btn btn-muted" type="button" id="perm-reload">Reload permissions</button>
-            <button class="btn" type="button" id="perm-export">Export CSV</button>
-        </div>
-    </div>
-    <div class="perm-pipeline" id="perm-pipeline">
-        <div class="perm-stage" data-stage="extract">Extract</div>
-        <div class="perm-stage" data-stage="classify">Normalize & Classify</div>
-        <div class="perm-stage" data-stage="persist">Persist</div>
-        <div class="perm-stage" data-stage="summarize">Summarize</div>
-    </div>
-    <div class="notice info" id="perm-status-note" style="display:none;"></div>
-    <div class="muted" id="perm-non-android" style="display:none;">No Android permissions for this sample.</div>
-    <div class="detail-grid">
-        <div class="detail-card">
-            <div class="detail-card-title">Bucket summary</div>
-            <div class="perm-tiles" id="perm-tiles"></div>
-            <div class="perm-filters">
-                <div class="filter-field">
-                    <label for="perm-filter-bucket">Bucket</label>
-                    <select id="perm-filter-bucket">
-                        <option value="">All buckets</option>
-                    </select>
-                </div>
-                <div class="filter-field">
-                    <label for="perm-filter-known">Known</label>
-                    <select id="perm-filter-known">
-                        <option value="">All</option>
-                        <option value="known">Known</option>
-                        <option value="unknown">Unknown</option>
-                    </select>
-                </div>
+    <div class="detail-grid sample-detail-grid" id="sample-platform-evidence-grid"></div>
+    <div id="android-permissions-workflow">
+        <div class="perm-header">
+            <div class="perm-meta">
+                <div class="perm-meta-title">Permission state</div>
+                <div class="muted" id="perm-taxonomy">Taxonomy: --</div>
+                <div class="muted" id="perm-run-link"></div>
             </div>
-            <div id="perm-summary-list"></div>
-            <div class="muted" id="perm-summary-empty" style="display:none;">No permissions observed.</div>
+            <div class="perm-actions">
+                <button class="btn btn-muted" type="button" id="perm-reload">Reload permissions</button>
+                <button class="btn" type="button" id="perm-export">Export CSV</button>
+            </div>
         </div>
-        <div class="detail-card">
-            <div class="detail-card-title">Unknown permissions</div>
-            <div id="perm-unknown-list" class="muted">--</div>
+        <div class="perm-pipeline" id="perm-pipeline">
+            <div class="perm-stage" data-stage="extract">Extract</div>
+            <div class="perm-stage" data-stage="classify">Normalize & Classify</div>
+            <div class="perm-stage" data-stage="persist">Persist</div>
+            <div class="perm-stage" data-stage="summarize">Summarize</div>
         </div>
-    </div>
+        <div class="notice info" id="perm-status-note" style="display:none;"></div>
+        <div class="muted" id="perm-non-android" style="display:none;">No Android permissions for this sample.</div>
+        <div class="detail-grid">
+            <div class="detail-card">
+                <div class="detail-card-title">Bucket summary</div>
+                <div class="perm-tiles" id="perm-tiles"></div>
+                <div class="perm-filters">
+                    <div class="filter-field">
+                        <label for="perm-filter-bucket">Bucket</label>
+                        <select id="perm-filter-bucket">
+                            <option value="">All buckets</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="perm-filter-known">Known</label>
+                        <select id="perm-filter-known">
+                            <option value="">All</option>
+                            <option value="known">Known</option>
+                            <option value="unknown">Unknown</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="perm-summary-list"></div>
+                <div class="muted" id="perm-summary-empty" style="display:none;">No permissions observed.</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-card-title">Unknown permission review</div>
+                <div id="perm-unknown-list" class="muted">--</div>
+            </div>
+        </div>
 
-    <div class="table-scroll">
-        <table class="table" id="perm-detail-table">
-            <thead>
-                <tr>
-                    <th>Permission</th>
-                    <th>Classification</th>
-                    <th>Bucket</th>
-                    <th>Known</th>
-                    <th>Rule fired</th>
-                    <th>Observed at</th>
-                </tr>
-            </thead>
-            <tbody id="perm-detail-body">
-                <tr>
-                    <td colspan="6" class="muted">Loading permissions...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <div class="table-scroll">
+            <table class="table" id="perm-detail-table">
+                <thead>
+                    <tr>
+                        <th>Permission</th>
+                        <th>Classification</th>
+                        <th>Bucket</th>
+                        <th>Known</th>
+                        <th>Rule fired</th>
+                        <th>Observed at</th>
+                    </tr>
+                </thead>
+                <tbody id="perm-detail-body">
+                    <tr>
+                        <td colspan="6" class="muted">Loading permissions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <div class="health-error" id="perm-error"></div>
+        <div class="health-error" id="perm-error"></div>
+    </div>
 </section>
 
-<section class="perm-section" id="sample-advanced-section">
+<section class="perm-section sample-detail-shell" id="sample-advanced-section">
     <details>
         <summary class="muted">Show advanced diagnostics</summary>
-        <div class="detail-grid" id="sample-advanced-grid" style="margin-top: 8px;"></div>
+        <div class="detail-grid sample-detail-grid" id="sample-advanced-grid" style="margin-top: 8px;"></div>
     </details>
 </section>
 
-<section class="perm-section" id="sample-error-section" style="display:none;">
+<section class="perm-section sample-detail-shell" id="sample-error-section" style="display:none;">
     <div class="section-shell-header" style="margin-top: 18px;">
         <div>
             <h2 class="section-shell-title">Last Error</h2>

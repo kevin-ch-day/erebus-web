@@ -13,14 +13,20 @@ require_once __DIR__ . '/app_config.php';
 
 /**
  * Canonical timezone key -> IANA timezone ID.
- * (Only these 4 are official options in Settings.)
  */
 function tz_map(): array
 {
     return [
         'minneapolis' => TZ_MINNEAPOLIS,
+        'denver'      => TZ_DENVER,
         'las_vegas'   => TZ_LAS_VEGAS,
+        'new_york'    => TZ_NEW_YORK,
+        'anchorage'   => TZ_ANCHORAGE,
+        'honolulu'    => TZ_HONOLULU,
         'utc'         => TZ_UTC,
+        'amsterdam'   => TZ_AMSTERDAM,
+        'paris'       => TZ_PARIS,
+        'tokyo'       => TZ_TOKYO,
         'dubai'       => TZ_DUBAI,
     ];
 }
@@ -34,9 +40,16 @@ function tz_aliases(): array
     return [
         'mpls'    => 'minneapolis',
         'chicago' => 'minneapolis',
+        'mountain' => 'denver',
+        'den'      => 'denver',
 
         'vegas'   => 'las_vegas',
         'la'      => 'las_vegas',
+        'nyc'     => 'new_york',
+        'newyork' => 'new_york',
+        'alaska'  => 'anchorage',
+        'hawaii'  => 'honolulu',
+        'hnl'     => 'honolulu',
     ];
 }
 
@@ -100,7 +113,7 @@ function tz_default_key(): string
 }
 
 /**
- * Current selected display timezone key (cookie-based).
+ * Current selected primary display timezone key (cookie-based).
  * Returns default key if cookie missing/invalid.
  */
 function tz_current_key(): string
@@ -111,7 +124,7 @@ function tz_current_key(): string
 }
 
 /**
- * Current selected display timezone ID (cookie-based).
+ * Current selected primary display timezone ID (cookie-based).
  */
 function tz_current_id(): string
 {
@@ -119,7 +132,7 @@ function tz_current_id(): string
 }
 
 /**
- * Persist the display timezone key into the cookie.
+ * Persist the primary display timezone key into the cookie.
  * Returns true if applied, false if invalid key.
  */
 function tz_set_cookie(string $key): bool
@@ -149,6 +162,90 @@ function tz_set_cookie(string $key): bool
 
     // Make it available immediately in this request too
     $_COOKIE[TZ_COOKIE_NAME] = $canon;
+    return true;
+}
+
+/**
+ * Current selected secondary display timezone key (cookie-based).
+ * Returns null when the second operator clock is disabled.
+ */
+function tz_current_secondary_key(): ?string
+{
+    $raw = strtolower(trim((string)($_COOKIE[TZ_SECONDARY_COOKIE_NAME] ?? '')));
+    if ($raw === '' || $raw === 'none') {
+        return null;
+    }
+
+    $canon = tz_canonical_key($raw);
+    if ($canon !== null && $canon !== tz_current_key()) {
+        return $canon;
+    }
+
+    $fallback = defined('APP_TZ_DISPLAY_SECONDARY') ? APP_TZ_DISPLAY_SECONDARY : null;
+    if ($fallback === null) {
+        return null;
+    }
+
+    foreach (tz_map() as $key => $tzId) {
+        if ($tzId === $fallback && $key !== tz_current_key()) {
+            return $key;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Current selected secondary display timezone ID (cookie-based).
+ * Returns null when the second operator clock is disabled.
+ */
+function tz_current_secondary_id(): ?string
+{
+    $key = tz_current_secondary_key();
+    if ($key === null) {
+        return null;
+    }
+    return tz_map()[$key] ?? null;
+}
+
+/**
+ * Persist the optional secondary display timezone key into the cookie.
+ * Accepts "none" or empty string to disable the second operator clock.
+ */
+function tz_set_secondary_cookie(?string $key): bool
+{
+    $raw = strtolower(trim((string)$key));
+    $value = 'none';
+
+    if ($raw !== '' && $raw !== 'none') {
+        $canon = tz_canonical_key($raw);
+        if ($canon === null || $canon === tz_current_key()) {
+            return false;
+        }
+        $value = $canon;
+    }
+
+    $days = (int)TZ_COOKIE_DAYS;
+    $expires = time() + max(1, $days) * 86400;
+    $paths = [];
+    $paths[] = defined('COOKIE_PATH') ? COOKIE_PATH : '/';
+    if (defined('BASE_URL') && BASE_URL !== '') {
+        $paths[] = rtrim((string)BASE_URL, '/') . '/';
+    }
+    $paths[] = '/';
+    $paths = array_values(array_unique(array_filter($paths)));
+
+    foreach ($paths as $path) {
+        setcookie(TZ_SECONDARY_COOKIE_NAME, $value, [
+            'expires'  => $expires,
+            'path'     => $path,
+            'secure'   => false,
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    $_COOKIE[TZ_SECONDARY_COOKIE_NAME] = $value;
     return true;
 }
 
@@ -200,14 +297,15 @@ function fmt_utc_local(?string $utcTs, string $fmt = 'Y-m-d H:i:s'): string
 
 /**
  * Format UTC timestamp string into the secondary timezone (if enabled).
- * Returns null if secondary timezone is disabled.
+ * Returns null if the second operator clock is disabled.
  */
 function fmt_utc_secondary(?string $utcTs, string $fmt = 'Y-m-d H:i:s'): ?string
 {
-    if (!defined('APP_TZ_DISPLAY_SECONDARY') || APP_TZ_DISPLAY_SECONDARY === null) {
+    $secondaryTz = tz_current_secondary_id();
+    if ($secondaryTz === null) {
         return null;
     }
-    return fmt_utc_to_tz($utcTs, (string)APP_TZ_DISPLAY_SECONDARY, $fmt);
+    return fmt_utc_to_tz($utcTs, $secondaryTz, $fmt);
 }
 
 /**
@@ -220,10 +318,8 @@ function fmt_utc_dual(?string $utcTs, string $fmt = 'Y-m-d H:i:s'): string
     $primaryTz = tz_current_id();
     $primary = fmt_utc_to_tz($utcTs, $primaryTz, $fmt);
 
-    $secondaryTz = (defined('APP_TZ_DISPLAY_SECONDARY') ? APP_TZ_DISPLAY_SECONDARY : null);
+    $secondaryTz = tz_current_secondary_id();
     if ($secondaryTz === null) return $primary;
-
-    $secondaryTz = tz_safe((string)$secondaryTz);
     $secondary = fmt_utc_to_tz($utcTs, $secondaryTz, $fmt);
 
     return "{$primary} ({$primaryTz}) | {$secondary} ({$secondaryTz})";
@@ -253,9 +349,49 @@ function now_in_all_timezones(string $fmt = 'Y-m-d H:i:s'): array
 function tz_display_options(): array
 {
     return [
-        ['key' => 'minneapolis', 'label' => 'Minneapolis (America/Chicago)', 'tz' => TZ_MINNEAPOLIS],
-        ['key' => 'las_vegas',   'label' => 'Las Vegas (America/Los_Angeles)', 'tz' => TZ_LAS_VEGAS],
+        ['key' => 'new_york',    'label' => 'Eastern default: New York (America/New_York)', 'tz' => TZ_NEW_YORK],
+        ['key' => 'minneapolis', 'label' => 'Central default: Minneapolis (America/Chicago)', 'tz' => TZ_MINNEAPOLIS],
+        ['key' => 'denver',      'label' => 'Mountain default: Denver (America/Denver)', 'tz' => TZ_DENVER],
+        ['key' => 'las_vegas',   'label' => 'Pacific default: Las Vegas (America/Los_Angeles)', 'tz' => TZ_LAS_VEGAS],
+        ['key' => 'anchorage',   'label' => 'Alaska default: Anchorage (America/Anchorage)', 'tz' => TZ_ANCHORAGE],
+        ['key' => 'honolulu',    'label' => 'Hawaii default: Honolulu (Pacific/Honolulu)', 'tz' => TZ_HONOLULU],
         ['key' => 'utc',         'label' => 'UTC', 'tz' => TZ_UTC],
+        ['key' => 'amsterdam',   'label' => 'Amsterdam (Europe/Amsterdam)', 'tz' => TZ_AMSTERDAM],
+        ['key' => 'paris',       'label' => 'Paris (Europe/Paris)', 'tz' => TZ_PARIS],
+        ['key' => 'tokyo',       'label' => 'Tokyo (Asia/Tokyo)', 'tz' => TZ_TOKYO],
         ['key' => 'dubai',       'label' => 'Dubai (Asia/Dubai)', 'tz' => TZ_DUBAI],
+    ];
+}
+
+/**
+ * UI dropdown options for the optional second operator clock.
+ */
+function tz_secondary_options(): array
+{
+    return array_merge(
+        [['key' => 'none', 'label' => 'No second operator clock', 'tz' => '']],
+        tz_display_options()
+    );
+}
+
+function tz_display_label(string $key): string
+{
+    foreach (tz_display_options() as $opt) {
+        if (($opt['key'] ?? '') === $key) {
+            return (string)$opt['label'];
+        }
+    }
+    return $key;
+}
+
+function tz_us_defaults(): array
+{
+    return [
+        ['zone' => 'Eastern', 'key' => 'new_york', 'label' => 'New York', 'tz' => TZ_NEW_YORK],
+        ['zone' => 'Central', 'key' => 'minneapolis', 'label' => 'Minneapolis', 'tz' => TZ_MINNEAPOLIS],
+        ['zone' => 'Mountain', 'key' => 'denver', 'label' => 'Denver', 'tz' => TZ_DENVER],
+        ['zone' => 'Pacific', 'key' => 'las_vegas', 'label' => 'Las Vegas', 'tz' => TZ_LAS_VEGAS],
+        ['zone' => 'Alaska', 'key' => 'anchorage', 'label' => 'Anchorage', 'tz' => TZ_ANCHORAGE],
+        ['zone' => 'Hawaii', 'key' => 'honolulu', 'label' => 'Honolulu', 'tz' => TZ_HONOLULU],
     ];
 }

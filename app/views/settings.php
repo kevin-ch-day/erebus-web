@@ -8,8 +8,6 @@ require_once __DIR__ . '/../lib/theme.php';
 require_once __DIR__ . '/../lib/url.php';
 
 $title = 'Settings';
-$pageScripts = ['assets/js/pages/settings_page.js'];
-
 $success = false;
 $error = null;
 $warning = null;
@@ -17,8 +15,6 @@ $logSuccess = null;
 $logError = null;
 $logWarning = null;
 
-$currentKey = tz_current_key();
-$currentTz  = tz_current_id();
 $currentTheme = theme_current();
 
 function read_log_tail(string $path, int $lines): string
@@ -89,17 +85,12 @@ if ($selectedLog !== '' && !isset($logFiles[$selectedLog])) {
     $selectedLog = !empty($logFiles) ? array_key_first($logFiles) : '';
 }
 
-// v1: settings page is the ONLY place timezone can be changed.
 if (($_GET['saved'] ?? '') === '1') {
     $success = true;
 }
 
 if (($_GET['err'] ?? '') === 'theme') {
     $error = 'Invalid theme selection.';
-}
-
-if (($_GET['warn'] ?? '') === 'tz') {
-    $warning = 'Timezone unchanged (invalid input).';
 }
 
 if (($_GET['log_cleared'] ?? '') === '1') {
@@ -121,19 +112,36 @@ if ($selectedLog !== '' && isset($logFiles[$selectedLog])) {
 }
 ?>
 
-<h1>Settings</h1>
-
-<p class="muted">
-    Display settings only. Database write/read behavior remains UTC.
-</p>
-<div class="muted" style="margin-top: 6px;">
-    Scope: timezone + theme for this browser session. No VT pipeline or classification data changes.
-</div>
+<section class="page-hero settings-hero">
+    <div class="page-hero-body">
+        <div class="eyebrow">Workspace Settings</div>
+        <div class="page-kicker">Display preferences only</div>
+        <h1 class="page-hero-title">Settings</h1>
+        <p class="page-hero-lede muted">
+            Change appearance settings for this browser session. Database reads, writes, and VT pipeline behavior remain UTC.
+        </p>
+        <div class="page-hero-actions">
+            <button type="submit" form="settings-form" class="btn btn-primary">Save settings</button>
+            <a class="btn" href="<?= htmlspecialchars(page_url('landing')) ?>">Back to Home</a>
+            <a class="btn" href="<?= htmlspecialchars(page_url('health')) ?>">Open Health</a>
+            <a class="btn" href="<?= htmlspecialchars(page_url('time_reference')) ?>">Open Time</a>
+        </div>
+    </div>
+    <aside class="page-hero-side">
+        <h2 class="page-hero-side-title">Scope</h2>
+        <p>Applies only to this browser session. No VirusTotal, queue, or classification data changes happen here.</p>
+        <div class="hero-metric-grid">
+            <div class="hero-metric">
+                <div class="hero-metric-label">Theme</div>
+                <div class="hero-metric-value"><?= htmlspecialchars(ucfirst($currentTheme)) ?></div>
+            </div>
+        </div>
+    </aside>
+</section>
 
 <?php if ($success): ?>
     <div class="notice success">
-        Saved. Display timezone: <strong><?= htmlspecialchars($currentTz) ?></strong>
-        | Theme: <strong><?= htmlspecialchars(ucfirst($currentTheme)) ?></strong>
+        Saved. Theme: <strong><?= htmlspecialchars(ucfirst($currentTheme)) ?></strong>
     </div>
 <?php endif; ?>
 
@@ -144,45 +152,32 @@ if ($selectedLog !== '' && isset($logFiles[$selectedLog])) {
     <div class="notice warn"><?= htmlspecialchars($warning) ?></div>
 <?php endif; ?>
 
+<div class="settings-page-shell">
 <form method="post" id="settings-form">
-    <section class="settings-section">
-        <h2>Display preferences</h2>
-        <p class="muted">Set how timestamps and colors are shown across the web console.</p>
-        <div class="settings-fields">
-            <div class="settings-field">
-                <label for="tz">Display timezone</label>
-                <select id="tz" name="tz" required>
-                    <?php foreach (tz_display_options() as $opt): ?>
-                        <option
-                            value="<?= htmlspecialchars($opt['key']) ?>"
-                            data-tz="<?= htmlspecialchars($opt['tz']) ?>"
-                            <?= ($opt['key'] === $currentKey ? 'selected' : '') ?>>
-                            <?= htmlspecialchars($opt['label']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <div class="muted">Affects all timestamps shown across the UI.</div>
-                <div class="muted" id="settings-tz-preview">Current selection: --</div>
-            </div>
-            <div class="settings-field">
-                <label>Theme</label>
-                <label class="toggle">
-                    <input type="checkbox" name="theme_dark" value="1" <?= $currentTheme === 'dark' ? 'checked' : '' ?> />
-                    <span class="toggle-track" aria-hidden="true"></span>
-                    <span class="toggle-text">Dark mode</span>
-                </label>
-                <div class="muted">Applies to all screens after save.</div>
+    <section class="section-shell settings-primary-shell">
+        <div class="section-shell-header">
+            <div>
+                <h2 class="section-shell-title">Display preferences</h2>
+                <p class="section-shell-copy">Set how the web console looks. Clock selection now lives on the Time page.</p>
             </div>
         </div>
-        <div class="settings-actions">
-            <button type="submit" class="btn btn-primary">Save settings</button>
-            <a class="btn btn-muted" href="<?= htmlspecialchars(page_url('landing')) ?>">Back to Home</a>
-            <a class="muted" href="<?= htmlspecialchars(page_url('health')) ?>">Open Health</a>
+        <div class="detail-card settings-primary-card">
+            <div class="settings-fields">
+                <div class="settings-field">
+                    <label>Theme</label>
+                    <label class="toggle">
+                        <input type="checkbox" name="theme_dark" value="1" <?= $currentTheme === 'dark' ? 'checked' : '' ?> />
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="toggle-text">Dark mode</span>
+                    </label>
+                    <div class="muted">Applies to all screens after save.</div>
+                </div>
+            </div>
         </div>
     </section>
 </form>
 
-<section class="settings-section">
+<section class="section-shell settings-secondary-shell">
     <details>
         <summary class="muted">Advanced: local logs</summary>
         <p class="muted" style="margin-top:8px;">View recent app/api/db log lines for troubleshooting. Clear only truncates local log files.</p>
@@ -243,38 +238,4 @@ if ($selectedLog !== '' && isset($logFiles[$selectedLog])) {
     </details>
 </section>
 
-<section class="settings-section">
-    <details>
-        <summary class="muted">Reference: timezone table</summary>
-        <p class="muted" style="margin-top:8px;">Reference only. DB logic remains UTC.</p>
-        <div class="table-scroll">
-        <?php
-        $timeRows = [
-            ['label' => 'Minneapolis', 'key' => 'minneapolis', 'tz' => TZ_MINNEAPOLIS],
-            ['label' => 'Las Vegas', 'key' => 'las_vegas', 'tz' => TZ_LAS_VEGAS],
-            ['label' => 'UTC', 'key' => 'utc', 'tz' => TZ_UTC],
-            ['label' => 'Dubai', 'key' => 'dubai', 'tz' => TZ_DUBAI],
-        ];
-        $nowMap = now_in_all_timezones();
-        ?>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Location</th>
-                    <th>TZ</th>
-                    <th>Now</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($timeRows as $row): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($row['label']) ?></td>
-                        <td><?= htmlspecialchars($row['tz']) ?></td>
-                        <td><?= htmlspecialchars($nowMap[$row['key']]['now'] ?? '') ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-        </div>
-    </details>
-</section>
+</div>

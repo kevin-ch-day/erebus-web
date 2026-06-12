@@ -128,9 +128,13 @@ if ($view === null) {
     exit;
 }
 
-// Handle settings POST before layout output (headers/cookies must be sent early).
+// Handle settings/time POST before layout output (headers/cookies must be sent early).
 if ($page === 'settings' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     require_once __DIR__ . '/../app/handlers/settings_post.php';
+    exit;
+}
+if ($page === 'time_reference' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    require_once __DIR__ . '/../app/handlers/time_reference_post.php';
     exit;
 }
 
@@ -149,14 +153,18 @@ if (!is_file($view)) {
     exit;
 }
 
-// Shared layout shell
-require_once __DIR__ . '/../app/lib/header.php';
-
+// Shared layout shell. Buffer rendering so view/header exceptions do not leak
+// partial HTML before the error page can be emitted.
+ob_start();
 try {
+    require_once __DIR__ . '/../app/lib/header.php';
     require $view;
+    require_once __DIR__ . '/../app/lib/footer.php';
+    ob_end_flush();
 } catch (Throwable $e) {
+    if (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     log_exception($e, $requestId, 'app', 'VIEW_EXCEPTION', $routeContext, 'app');
     render_error_page('Application Error', 'An unexpected error occurred.', $requestId, $e, 500);
 }
-
-require_once __DIR__ . '/../app/lib/footer.php';

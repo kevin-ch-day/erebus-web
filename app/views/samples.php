@@ -39,7 +39,7 @@ $pageScripts = [
         <div class="page-kicker">Sample lookup and workflow inventory</div>
         <h1 class="page-hero-title">Malware Samples</h1>
         <p class="page-hero-lede muted">
-            Catalog inventory and VT workflow state. Use this page for broad sample lookup, then move to row-level authority or taxonomy pages when you need curation decisions.
+            Use this page for broad sample lookup, VT state review, and quick movement into taxonomy or dataset-governance work when a row needs deeper interpretation.
         </p>
         <div class="page-hero-actions">
             <a class="btn" href="<?= h(page_url('family_taxonomy_queue', ['platform' => 'android'])) ?>">Repair Queue</a>
@@ -49,19 +49,19 @@ $pageScripts = [
     </div>
     <aside class="page-hero-side">
         <h2 class="page-hero-side-title">Interpretation</h2>
-        <p>Workflow truth comes from VT processing state. Family-check context here is useful for visibility, but authority-aware benchmark interpretation lives on <code>label_surfaces</code> and <code>type_benchmark</code>.</p>
+        <p>Workflow truth comes from VT processing state. Family alignment here is visibility context only; governed label authority and benchmark interpretation live on Label Surfaces and Type Benchmark.</p>
         <div class="hero-metric-grid">
             <div class="hero-metric">
                 <div class="hero-metric-label">Inventory</div>
-                <div class="hero-metric-value">samples</div>
+                <div class="hero-metric-value">Catalog + VT state</div>
             </div>
             <div class="hero-metric">
                 <div class="hero-metric-label">Row authority</div>
-                <div class="hero-metric-value">label_surfaces</div>
+                <div class="hero-metric-value">Label Surfaces</div>
             </div>
             <div class="hero-metric">
                 <div class="hero-metric-label">Benchmark</div>
-                <div class="hero-metric-value">type_benchmark</div>
+                <div class="hero-metric-value">Type Benchmark</div>
             </div>
         </div>
     </aside>
@@ -75,16 +75,11 @@ $pageScripts = [
      data-default-sort-by="id"
      data-default-sort-dir="desc"></div>
 
-<div class="muted" style="margin: 10px 0;">
-    Display TZ: <strong><?= htmlspecialchars(tz_current_id()) ?></strong>
-    | <a href="<?= htmlspecialchars(page_url('settings')) ?>">Change</a>
-</div>
-
 <section class="section-shell">
     <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">Filters</h2>
-            <p class="muted">Filters are powered by the sample list API. Family-check context here is visibility only, not benchmark authority.</p>
+            <p class="muted">Use these filters to narrow the catalog slice before opening row-level authority or repair surfaces.</p>
         </div>
     </div>
     <div class="filters">
@@ -97,7 +92,7 @@ $pageScripts = [
             <input id="samples-family" type="search" placeholder="Family label" value="<?= htmlspecialchars($queryFamily) ?>" />
         </div>
         <div class="filter-field">
-            <label for="samples-family-alignment">Family check</label>
+            <label for="samples-family-alignment">Family alignment</label>
             <select id="samples-family-alignment">
                 <option value="">All alignment states</option>
                 <option value="mismatch" <?= $queryFamilyAlignment === 'mismatch' ? 'selected' : '' ?>>Mismatch</option>
@@ -113,9 +108,18 @@ $pageScripts = [
             <select id="samples-status">
                 <option value="">All statuses</option>
                 <?php
-                $statusOptions = ['NEW', 'REANALYZE', 'PROCESSING', 'LOOKED_UP', 'NO_DATA', 'ERROR', 'RETRY_WAIT', 'DISABLED'];
-                foreach ($statusOptions as $opt): ?>
-                    <option value="<?= h($opt) ?>" <?= $queryStatus === $opt ? 'selected' : '' ?>><?= h($opt) ?></option>
+                $statusOptions = [
+                    'NEW' => 'New',
+                    'REANALYZE' => 'Reanalyze',
+                    'PROCESSING' => 'Processing',
+                    'LOOKED_UP' => 'Looked up',
+                    'NO_DATA' => 'No data',
+                    'ERROR' => 'Error',
+                    'RETRY_WAIT' => 'Retry wait',
+                    'DISABLED' => 'Disabled',
+                ];
+                foreach ($statusOptions as $opt => $label): ?>
+                    <option value="<?= h($opt) ?>" <?= $queryStatus === $opt ? 'selected' : '' ?>><?= h($label) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -130,7 +134,7 @@ $pageScripts = [
         <div class="filter-field">
             <label for="samples-columns">Columns</label>
             <select id="samples-columns">
-                <option value="simple" <?= $queryColumns === 'simple' ? 'selected' : '' ?>>Simple</option>
+                <option value="simple" <?= $queryColumns === 'simple' ? 'selected' : '' ?>>Compact</option>
                 <option value="detailed" <?= $queryColumns === 'detailed' ? 'selected' : '' ?>>Detailed</option>
             </select>
         </div>
@@ -140,7 +144,7 @@ $pageScripts = [
                 <option value="id" <?= $querySortBy === 'id' ? 'selected' : '' ?>>ID</option>
                 <option value="label" <?= $querySortBy === 'label' ? 'selected' : '' ?>>Label</option>
                 <option value="family" <?= $querySortBy === 'family' ? 'selected' : '' ?>>Family</option>
-                <option value="alignment" <?= $querySortBy === 'alignment' ? 'selected' : '' ?>>Family check</option>
+                <option value="alignment" <?= $querySortBy === 'alignment' ? 'selected' : '' ?>>Family alignment</option>
             </select>
         </div>
         <div class="filter-field">
@@ -161,10 +165,10 @@ $pageScripts = [
 </section>
 
 <section class="section-shell">
-    <div class="section-shell-header">
+        <div class="section-shell-header">
         <div>
             <h2 class="section-shell-title">Sample Inventory</h2>
-            <p class="muted">Broad sample table with catalog-family visibility and VT workflow state.</p>
+            <p class="muted">Broad sample table for catalog identity, family alignment context, and VT workflow posture.</p>
         </div>
     </div>
     <div class="table-scroll">
@@ -174,29 +178,29 @@ $pageScripts = [
                 <th>
                     <button class="samples-sort-btn" type="button" data-sort="id" aria-label="Sort by ID">
                         ID
-                        <span class="samples-sort-indicator"><?= $querySortBy === 'id' ? ($querySortDir === 'asc' ? '^' : 'v') : '--' ?></span>
+                        <span class="samples-sort-indicator"><?= $querySortBy === 'id' ? ($querySortDir === 'asc' ? '↑' : '↓') : '·' ?></span>
                     </button>
                 </th>
                 <th>
                     <button class="samples-sort-btn" type="button" data-sort="label" aria-label="Sort by Label">
                         Label
-                        <span class="samples-sort-indicator"><?= $querySortBy === 'label' ? ($querySortDir === 'asc' ? '^' : 'v') : '--' ?></span>
+                        <span class="samples-sort-indicator"><?= $querySortBy === 'label' ? ($querySortDir === 'asc' ? '↑' : '↓') : '·' ?></span>
                     </button>
                 </th>
                 <th>
-                    <button class="samples-sort-btn" type="button" data-sort="alignment" aria-label="Sort by Family Check">
-                        Family check
-                        <span class="samples-sort-indicator"><?= $querySortBy === 'alignment' ? ($querySortDir === 'asc' ? '^' : 'v') : '--' ?></span>
+                    <button class="samples-sort-btn" type="button" data-sort="alignment" aria-label="Sort by Family Alignment">
+                        Family alignment
+                        <span class="samples-sort-indicator"><?= $querySortBy === 'alignment' ? ($querySortDir === 'asc' ? '↑' : '↓') : '·' ?></span>
                     </button>
                 </th>
                 <th>
                     <button class="samples-sort-btn" type="button" data-sort="family" aria-label="Sort by Family">
                         Family
-                        <span class="samples-sort-indicator"><?= $querySortBy === 'family' ? ($querySortDir === 'asc' ? '^' : 'v') : '--' ?></span>
+                        <span class="samples-sort-indicator"><?= $querySortBy === 'family' ? ($querySortDir === 'asc' ? '↑' : '↓') : '·' ?></span>
                     </button>
                 </th>
                 <th>Primary</th>
-                <th>SHA256 (last 8)</th>
+                <th>SHA256 tail</th>
                 <th class="col-vt">Malicious</th>
                 <th class="col-vt">Suspicious</th>
                 <th class="col-vt">Undetected</th>

@@ -7,10 +7,19 @@ require_once __DIR__ . '/routes.php';
 
 /**
  * Escape for HTML output (consistent everywhere).
+ * Accepts nullable scalars so view rendering does not fatal on a missed null check.
  */
-function h(string $s): string
+function h($s): string
 {
-    return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    if ($s === null) {
+        return '';
+    }
+    if (is_bool($s)) {
+        $s = $s ? '1' : '0';
+    } elseif (!is_scalar($s)) {
+        $s = '';
+    }
+    return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 /**

@@ -7,7 +7,6 @@ require_once __DIR__ . '/../lib/time.php';
 
 $title = APP_NAME . ' - Landing';
 $version = defined('APP_VERSION') ? (string)APP_VERSION : 'v1';
-$env = defined('APP_ENV') ? (string)APP_ENV : '';
 $tz = tz_current_id();
 
 $landingApiUrl = api_url('landing_snapshot.php');
@@ -16,7 +15,6 @@ $landingApiUrl = api_url('landing_snapshot.php');
 <div id="landing-page"
      data-endpoint="<?= h($landingApiUrl) ?>"
      data-version="<?= h($version) ?>"
-     data-environment="<?= h($env) ?>"
      data-timezone="<?= h($tz) ?>"></div>
 
 <section class="landing-command">
@@ -31,22 +29,6 @@ $landingApiUrl = api_url('landing_snapshot.php');
             <a class="btn btn-primary" href="<?= h(page_url('health')) ?>">Open Pipeline Health</a>
             <a class="btn" href="<?= h(page_url('family_taxonomy_queue', ['platform' => 'android'])) ?>">Open Family Repair Queue</a>
             <a class="btn" href="<?= h(page_url('type_benchmark')) ?>">Open Type Benchmark</a>
-        </div>
-        <div class="landing-command-strip">
-            <div class="landing-inline-metric surface-panel surface-panel-soft surface-panel-compact">
-                <div class="landing-inline-label">Version</div>
-                <div class="landing-inline-value"><?= h($version) ?></div>
-            </div>
-            <?php if ($env !== ''): ?>
-            <div class="landing-inline-metric surface-panel surface-panel-soft surface-panel-compact">
-                <div class="landing-inline-label">Environment</div>
-                <div class="landing-inline-value"><?= h($env) ?></div>
-            </div>
-            <?php endif; ?>
-            <div class="landing-inline-metric surface-panel surface-panel-soft surface-panel-compact">
-                <div class="landing-inline-label">Display timezone</div>
-                <div class="landing-inline-value"><?= h($tz) ?></div>
-            </div>
         </div>
     </div>
     <aside class="landing-command-side surface-panel surface-panel-soft">

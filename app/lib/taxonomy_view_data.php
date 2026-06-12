@@ -14,6 +14,22 @@ function taxonomy_view_force_refresh_requested(): bool
     return in_array($refresh, ['1', 'true', 'yes', 'y'], true);
 }
 
+function taxonomy_view_schedule_refresh_once(string $key, callable $refresh): void
+{
+    static $scheduled = [];
+    if (isset($scheduled[$key])) {
+        return;
+    }
+    $scheduled[$key] = true;
+    register_shutdown_function(static function () use ($refresh): void {
+        try {
+            $refresh();
+        } catch (Throwable $e) {
+            // Ignore deferred refresh failures; pages should still render stale data.
+        }
+    });
+}
+
 /**
  * Small view-layer wrapper around the taxonomy check so pages can use named
  * filters instead of long positional empty-argument chains.
@@ -40,12 +56,29 @@ function taxonomy_view_fetch(int $limit = 25, array $filters = []): array
         $cache[$cacheKey] = $cached;
         return $cache[$cacheKey];
     }
-    if (!$forceRefresh) {
-        $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
-        if (is_array($staleCached)) {
-            $cache[$cacheKey] = $staleCached;
-            return $cache[$cacheKey];
+    $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
+    if (is_array($staleCached)) {
+        if ($forceRefresh) {
+            taxonomy_view_schedule_refresh_once($namespace . ':' . $cacheKey, static function () use ($limit, $filters, $namespace, $cacheKey): void {
+                $includeRows = !array_key_exists('include_rows', $filters) || (bool)$filters['include_rows'];
+                $payload = db_family_taxonomy_check(
+                    limit: $limit,
+                    alignment: (string)($filters['alignment'] ?? ''),
+                    platform: (string)($filters['platform'] ?? ''),
+                    query: (string)($filters['query'] ?? $filters['q'] ?? ''),
+                    pattern: (string)($filters['pattern'] ?? ''),
+                    pairCatalog: (string)($filters['pair_catalog'] ?? ''),
+                    pairSignal: (string)($filters['pair_signal'] ?? ''),
+                    fixAction: (string)($filters['fix_action'] ?? ''),
+                    targetFamily: (string)($filters['target_family'] ?? ''),
+                    decisionMode: (string)($filters['decision_mode'] ?? ''),
+                    includeRows: $includeRows,
+                );
+                app_transient_cache_write($namespace, $cacheKey, $payload);
+            });
         }
+        $cache[$cacheKey] = $staleCached;
+        return $cache[$cacheKey];
     }
 
     $cache[$cacheKey] = db_family_taxonomy_check(
@@ -107,12 +140,16 @@ function taxonomy_view_catalog_only_authority_summary(string $platform = 'androi
         $cache[$cacheKey] = $cached;
         return $cache[$cacheKey];
     }
-    if (!$forceRefresh) {
-        $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
-        if (is_array($staleCached)) {
-            $cache[$cacheKey] = $staleCached;
-            return $cache[$cacheKey];
+    $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
+    if (is_array($staleCached)) {
+        if ($forceRefresh) {
+            taxonomy_view_schedule_refresh_once($namespace . ':' . $cacheKey, static function () use ($platform, $namespace, $cacheKey): void {
+                $payload = db_family_taxonomy_catalog_only_authority_summary($platform);
+                app_transient_cache_write($namespace, $cacheKey, $payload);
+            });
         }
+        $cache[$cacheKey] = $staleCached;
+        return $cache[$cacheKey];
     }
 
     $cache[$cacheKey] = db_family_taxonomy_catalog_only_authority_summary($platform);
@@ -140,12 +177,16 @@ function taxonomy_view_catalog_only_anchor_families(string $platform = 'android'
         $cache[$cacheKey] = $cached;
         return $cache[$cacheKey];
     }
-    if (!$forceRefresh) {
-        $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
-        if (is_array($staleCached)) {
-            $cache[$cacheKey] = $staleCached;
-            return $cache[$cacheKey];
+    $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
+    if (is_array($staleCached)) {
+        if ($forceRefresh) {
+            taxonomy_view_schedule_refresh_once($namespace . ':' . $cacheKey, static function () use ($platform, $limit, $namespace, $cacheKey): void {
+                $payload = db_family_taxonomy_catalog_only_anchor_families($platform, $limit);
+                app_transient_cache_write($namespace, $cacheKey, $payload);
+            });
         }
+        $cache[$cacheKey] = $staleCached;
+        return $cache[$cacheKey];
     }
 
     $cache[$cacheKey] = db_family_taxonomy_catalog_only_anchor_families($platform, $limit);

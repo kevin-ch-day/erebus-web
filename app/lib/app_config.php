@@ -165,7 +165,7 @@ if ($baseUrl === false || $baseUrl === '') {
 define('BASE_URL', $baseUrl);
 
 // Optional: environment tag for banners/badges (dev/test/prod)
-define('APP_ENV', strtolower(getenv('APP_ENV') ?: 'dev'));
+define('APP_ENV', strtolower(getenv('APP_ENV') ?: 'prod'));
 // Feature flags (simple env toggles).
 $featurePhase2b = getenv('FEATURE_PHASE2B_READONLY');
 if ($featurePhase2b === false || $featurePhase2b === '') {
@@ -183,23 +183,37 @@ define('FEATURE_PHASE3_OPS', filter_var($featurePhase3, FILTER_VALIDATE_BOOLEAN)
 // Timezone display (UI only)
 // -----------------------------
 define('TZ_MINNEAPOLIS', 'America/Chicago');       // Minneapolis (Central Time)
+define('TZ_DENVER',      'America/Denver');        // Denver (Mountain Time)
 define('TZ_LAS_VEGAS',   'America/Los_Angeles');   // Las Vegas (Pacific Time)
+define('TZ_NEW_YORK',    'America/New_York');      // New York (Eastern Time)
+define('TZ_ANCHORAGE',   'America/Anchorage');     // Anchorage (Alaska Time)
+define('TZ_HONOLULU',    'Pacific/Honolulu');      // Honolulu (Hawaii-Aleutian Time)
 define('TZ_UTC',         'UTC');                   // UTC
+define('TZ_AMSTERDAM',   'Europe/Amsterdam');      // Amsterdam (CET/CEST)
+define('TZ_PARIS',       'Europe/Paris');          // Paris (CET/CEST)
+define('TZ_TOKYO',       'Asia/Tokyo');            // Tokyo (JST)
 define('TZ_DUBAI',       'Asia/Dubai');            // Dubai (GST)
 
 // Allowed keys for v1 timezone selection (stored in cookie)
 // NOTE: these keys must match time.php tz_map()
 define('TZ_KEYS', [
     'minneapolis',
+    'denver',
     'las_vegas',
+    'new_york',
+    'anchorage',
+    'honolulu',
     'utc',
+    'amsterdam',
+    'paris',
+    'tokyo',
     'dubai',
 ]);
 
-// Default display timezone (UI only)
+// Default primary display timezone (UI only)
 define('APP_TZ_DISPLAY_DEFAULT', TZ_MINNEAPOLIS);
 
-// Optional: secondary display timezone (UI-only). Set to null to disable.
+// Optional fallback secondary display timezone (UI-only). Set to null to disable.
 define('APP_TZ_DISPLAY_SECONDARY', null); // e.g., TZ_UTC
 
 // -----------------------------
@@ -209,7 +223,8 @@ define('APP_THEME_DEFAULT', 'dark'); // dark | light
 define('THEME_COOKIE_NAME', 'blackspider_theme');
 
 // Settings storage (v1: cookie-based, internal tool)
-define('TZ_COOKIE_NAME', 'blackspider_tz'); // stores key: minneapolis|las_vegas|utc|dubai
+define('TZ_COOKIE_NAME', 'blackspider_tz'); // stores primary key from TZ_KEYS
+define('TZ_SECONDARY_COOKIE_NAME', 'blackspider_tz_secondary'); // stores secondary key from TZ_KEYS or "none"
 define('TZ_COOKIE_DAYS', 30);
 
 // Cookie scope:

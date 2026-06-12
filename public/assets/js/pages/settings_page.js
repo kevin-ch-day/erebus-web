@@ -21,7 +21,7 @@
     }
     if (tzPreview) {
       const label = opt ? String(opt.textContent || '').trim() : '';
-      tzPreview.textContent = 'Current selection: ' + (label || '--') + (tz ? ` (${tz})` : '');
+      tzPreview.textContent = 'Current selection: ' + (label || '--');
     }
   }
 

@@ -47,10 +47,70 @@ const entries = [
     name: 'ErebusCheckHashPage',
   },
   {
+    entry: 'frontend/pages/samples-page.ts',
+    outDir: 'public/assets/js/pages',
+    fileName: 'samples_page.js',
+    name: 'ErebusSamplesPage',
+  },
+  {
     entry: 'frontend/pages/submit-artifact-page.ts',
     outDir: 'public/assets/js/pages',
     fileName: 'submit_artifact_page.js',
     name: 'ErebusSubmitArtifactPage',
+  },
+  {
+    entry: 'frontend/pages/sample-detail-page.ts',
+    outDir: 'public/assets/js/pages',
+    fileName: 'sample_detail_page.js',
+    name: 'ErebusSampleDetailPage',
+  },
+  {
+    entry: 'frontend/modules/samples/samples-query-builder.ts',
+    outDir: 'public/assets/js/modules/samples',
+    fileName: 'samples_query_builder.js',
+    name: 'ErebusSamplesQueryBuilder',
+  },
+  {
+    entry: 'frontend/modules/samples/samples-table-renderer.ts',
+    outDir: 'public/assets/js/modules/samples',
+    fileName: 'samples_table_renderer.js',
+    name: 'ErebusSamplesTableRenderer',
+  },
+  {
+    entry: 'frontend/modules/sample-detail/sample-detail-formatters.ts',
+    outDir: 'public/assets/js/modules/sample_detail',
+    fileName: 'sample_detail_formatters.js',
+    name: 'ErebusSampleDetailFormatters',
+  },
+  {
+    entry: 'frontend/modules/sample-detail/sample-summary-renderer.ts',
+    outDir: 'public/assets/js/modules/sample_detail',
+    fileName: 'sample_summary_renderer.js',
+    name: 'ErebusSampleSummaryRenderer',
+  },
+  {
+    entry: 'frontend/modules/sample-detail/sample-detail-surface.ts',
+    outDir: 'public/assets/js/modules/sample_detail',
+    fileName: 'sample_detail_surface.js',
+    name: 'ErebusSampleDetailSurface',
+  },
+  {
+    entry: 'frontend/modules/sample-detail/sample-permissions-csv.ts',
+    outDir: 'public/assets/js/modules/sample_detail',
+    fileName: 'sample_permissions_csv.js',
+    name: 'ErebusSamplePermissionsCsv',
+  },
+  {
+    entry: 'frontend/modules/sample-detail/sample-permissions-renderers.ts',
+    outDir: 'public/assets/js/modules/sample_detail',
+    fileName: 'sample_permissions_renderers.js',
+    name: 'ErebusSamplePermissionsRenderers',
+  },
+  {
+    entry: 'frontend/modules/sample-detail/sample-permissions-controller.ts',
+    outDir: 'public/assets/js/modules/sample_detail',
+    fileName: 'sample_permissions_controller.js',
+    name: 'ErebusSamplePermissionsController',
   },
 ];
 

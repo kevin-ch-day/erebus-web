@@ -36,7 +36,7 @@ $pageScripts = [
 </div>
 <div class="muted" style="margin: 10px 0;">
     Display TZ: <strong><?= htmlspecialchars(tz_current_id()) ?></strong>
-    | <a href="<?= htmlspecialchars(page_url('settings')) ?>">Change</a>
+    | <a href="<?= htmlspecialchars(page_url('time_reference')) ?>">Change clocks</a>
 </div>
 <div id="perm-evidence-page" style="display:none;"
      data-evidence-endpoint="<?= h($evidenceUrl) ?>"

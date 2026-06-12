@@ -239,6 +239,12 @@ function app_route_manifest(): array
             'nav_section' => 'admin',
             'view' => __DIR__ . '/../views/settings.php',
         ],
+        'time_reference' => [
+            'label' => 'Time',
+            'section' => 'Platform',
+            'nav_section' => 'admin',
+            'view' => __DIR__ . '/../views/time_reference.php',
+        ],
         'schema_inventory' => [
             'label' => 'Schema Inventory',
             'section' => 'Platform',
@@ -407,20 +413,20 @@ function app_nav_route_overrides(): array
         'pending_source_mix' => ['section' => 'console', 'group' => 'core', 'order' => 60, 'label' => 'Pending Source Mix'],
 
         'family_taxonomy_check' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 10, 'label' => 'Taxonomy Workspace'],
-        'family_taxonomy_gaps' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 20, 'priority' => 20],
-        'family_taxonomy_queue' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 30, 'priority' => 30],
+        'family_taxonomy_gaps' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 20],
+        'family_taxonomy_queue' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 30],
         'family_taxonomy_conflicts' => ['section' => 'malware', 'group' => 'taxonomy', 'order' => 40],
         'family_taxonomy_repair_planning' => ['section' => 'malware', 'group' => 'policy', 'order' => 10],
         'family_taxonomy_signal_hygiene' => ['section' => 'malware', 'group' => 'policy', 'order' => 20],
 
         'dataset_readiness' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 10],
-        'type_benchmark' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 20, 'priority' => 40],
+        'type_benchmark' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 20],
         'label_surfaces' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 30],
         'authority_consistency_debt' => ['section' => 'dataset', 'group' => 'surfaces', 'order' => 40],
         'dataset_exports' => ['section' => 'dataset', 'group' => 'release', 'order' => 10, 'label' => 'Export Readiness'],
 
         'permissions_overview' => ['section' => 'permissions', 'group' => 'operate', 'order' => 10],
-        'permissions_triage' => ['section' => 'permissions', 'group' => 'operate', 'order' => 20, 'priority' => 50],
+        'permissions_triage' => ['section' => 'permissions', 'group' => 'operate', 'order' => 20],
         'permissions_review' => ['section' => 'permissions', 'group' => 'operate', 'order' => 30],
         'permissions_queue' => ['section' => 'permissions', 'group' => 'operate', 'order' => 40],
         'permissions_drift' => ['section' => 'permissions', 'group' => 'diagnostics', 'order' => 10],
@@ -431,7 +437,7 @@ function app_nav_route_overrides(): array
         'permissions_oem_registry' => ['section' => 'permissions', 'group' => 'reference', 'order' => 30],
         'permissions_oem_permissions' => ['section' => 'permissions', 'group' => 'reference', 'order' => 40],
 
-        'health' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 10, 'label' => 'Pipeline Health', 'priority' => 10],
+        'health' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 10, 'label' => 'Pipeline Health'],
         'vt_confidence' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 30],
         'runs' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 10],
         'vt_snapshot_inventory' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 20, 'label' => 'Snapshot Inventory'],
@@ -440,6 +446,7 @@ function app_nav_route_overrides(): array
         'schema_inventory' => ['section' => 'admin', 'group' => 'structure', 'order' => 20],
         'admin_diagnostics' => ['section' => 'admin', 'group' => 'admin', 'order' => 10],
         'settings' => ['section' => 'admin', 'group' => 'admin', 'order' => 20],
+        'time_reference' => ['section' => 'admin', 'group' => 'admin', 'order' => 30, 'label' => 'Time'],
     ];
 }
 
@@ -490,30 +497,4 @@ function app_nav_sections_manifest(): array
     }
 
     return $sections;
-}
-
-function app_priority_lane_links(): array
-{
-    $overrides = app_nav_route_overrides();
-    $catalog = app_route_catalog();
-    $links = [];
-
-    foreach ($overrides as $route => $override) {
-        if (!isset($override['priority']) || !isset($catalog[$route])) {
-            continue;
-        }
-        $meta = $catalog[$route];
-        $links[] = [
-            'route' => $route,
-            'label' => (string)($override['label'] ?? ($meta['label'] ?? $route)),
-            'order' => (int)$override['priority'],
-        ];
-    }
-
-    usort($links, static fn(array $a, array $b): int => ($a['order'] <=> $b['order']) ?: strcmp((string)$a['label'], (string)$b['label']));
-
-    return array_map(
-        static fn(array $link): array => ['route' => $link['route'], 'label' => $link['label']],
-        $links
-    );
 }

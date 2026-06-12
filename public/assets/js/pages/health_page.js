@@ -7,25 +7,16 @@
   function toRecord(value) {
     return value && typeof value === "object" ? value : {};
   }
-  function setHidden(el, hidden) {
-    if (!(el instanceof HTMLElement)) return;
-    el.style.display = hidden ? "none" : "";
-  }
   if (root && window.App) {
     const pageRoot = root;
     const App = window.App;
     const endpoint = pageRoot.dataset.endpoint || "";
-    const diagnosticsEndpoint = pageRoot.dataset.diagnosticsEndpoint || "";
     const samplesBaseUrl = pageRoot.dataset.samplesBase || "";
     const refreshSeconds = Number(pageRoot.dataset.refreshSeconds || "15") || 15;
-    const diagnosticsRefreshSeconds = Number(pageRoot.dataset.diagnosticsRefreshSeconds || "300") || 300;
     const refreshMs = Math.max(5, refreshSeconds) * 1e3;
-    const diagnosticsRefreshMs = Math.max(refreshSeconds, diagnosticsRefreshSeconds) * 1e3;
     if (endpoint) {
       let fmt = function(value, fallback = "NULL") {
         return value === null || value === void 0 || value === "" ? fallback : String(value);
-      }, formatUtcCompact = function(value) {
-        return value ? formatUtc(value).replace(/,\s*/g, " ").replace(/\s+\d{4}\b/, "") : "--";
       }, metricFmt = function(value, fallback = "--") {
         if (value === null || value === void 0 || value === "") return fallback;
         const num = Number(value);
@@ -46,8 +37,8 @@
             value: isHold ? "Blocked" : "Clear",
             tone: isHold ? "warn" : "ok",
             body: isHold ? `Hold until ${esc(`${formatUtc(holdUntil)} ${displayTz}`)} | reason ${esc(fmt(holdReason))}` : "No active hold is blocking enrichment right now.",
-            actionHref: "#vt-key-posture",
-            actionLabel: "Review VT key posture"
+            actionHref: vtKeyDrilldownUrl,
+            actionLabel: "Open VT Key Drilldown"
           },
           {
             title: "Scheduler pressure",
@@ -93,6 +84,10 @@
         stoplightEl.classList.toggle("health-stoplight-ok", !isHold);
         const holdLabel = holdUntil ? `${formatUtc(holdUntil)} ${displayTz}` : fmt(holdUntil);
         stoplightSub.textContent = isHold ? `Hold until: ${holdLabel} | reason: ${fmt(holdReason)}` : "No active holds.";
+      }, setNextPath = function(message, className = "info") {
+        if (!nextPathEl) return;
+        nextPathEl.className = `notice ${className}`;
+        nextPathEl.textContent = message;
       }, renderTile = function(el, value) {
         if (el) el.textContent = String(value);
       }, renderReasons = function(list) {
@@ -126,15 +121,12 @@
         schemaListEl.innerHTML = "";
         if (!guard) {
           schemaSummaryEl.textContent = "Schema guard unavailable.";
-          setHidden(schemaGuardCardEl, false);
           return;
         }
         if (guard.status === "ok") {
           schemaSummaryEl.textContent = "No schema issues detected.";
-          setHidden(schemaGuardCardEl, true);
           return;
         }
-        setHidden(schemaGuardCardEl, false);
         const missing = asRows(guard.missing);
         schemaSummaryEl.textContent = missing.length ? `Missing ${missing.length} required columns.` : "Schema issues detected.";
         missing.slice(0, 6).forEach((item) => {
@@ -153,15 +145,12 @@
         const summary = toRecord(inventory?.summary);
         if (!Object.keys(summary).length) {
           if (schemaInventorySummaryEl) schemaInventorySummaryEl.textContent = "Schema inventory unavailable.";
-          setHidden(schemaInventoryCardEl, false);
           return;
         }
         const total = Number(summary.surface_count || 0);
         const available = Number(summary.available_count || 0);
         const missingSurfaces = Number(summary.missing_surface_count || 0);
         const missingColumns = Number(summary.missing_column_count || 0);
-        const healthy = !missingSurfaces && !missingColumns;
-        setHidden(schemaInventoryCardEl, healthy);
         if (schemaInventoryTotalEl) schemaInventoryTotalEl.textContent = String(total);
         if (schemaInventoryAvailableEl) schemaInventoryAvailableEl.textContent = String(available);
         if (schemaInventoryMissingColumnsEl) schemaInventoryMissingColumnsEl.textContent = String(missingColumns);
@@ -172,14 +161,12 @@
         if (!vtSurfaceSummaryEl || !vtSurfaceTotalEl || !vtSurfaceAvailableEl || !vtSurfaceMissingEl) return;
         if (!summary) {
           vtSurfaceSummaryEl.textContent = "VT surface summary unavailable.";
-          setHidden(vtSurfaceCardEl, false);
           return;
         }
         const known = Number(summary.known_count || 0);
         const available = Number(summary.available_count || 0);
         const missing = Number(summary.missing_count || 0);
         const missingNames = asRows(summary.missing_names).map((name) => String(name));
-        setHidden(vtSurfaceCardEl, missing === 0);
         vtSurfaceTotalEl.textContent = String(known);
         vtSurfaceAvailableEl.textContent = String(available);
         vtSurfaceMissingEl.textContent = String(missing);
@@ -188,11 +175,8 @@
         if (!familyTaxonomySummaryEl || !familyTaxonomyMismatchEl || !familyTaxonomySignalOnlyEl || !familyTaxonomyCatalogOnlyEl || !familyTaxonomyHighConflictEl) return;
         if (!summary || summary.available === false) {
           familyTaxonomySummaryEl.textContent = "Family taxonomy summary unavailable.";
-          setHidden(familyTaxonomyCardEl, false);
           return;
         }
-        const riskClass = String(summary.risk_class || "").toLowerCase();
-        setHidden(familyTaxonomyCardEl, riskClass === "ok");
         familyTaxonomyMismatchEl.textContent = fmt(summary.mismatch_rows);
         familyTaxonomySignalOnlyEl.textContent = fmt(summary.signal_only_rows);
         familyTaxonomyCatalogOnlyEl.textContent = fmt(summary.catalog_only_rows);
@@ -203,48 +187,6 @@
         catalogPrimaryEl.textContent = fmt(catalogs?.primary);
         catalogPermissionIntelEl.textContent = fmt(catalogs?.permission_intel);
         catalogSplitModeEl.textContent = catalogs?.split_enabled ? "yes" : "no";
-      }, humanizeKeyStatus = function(value) {
-        const status = String(value || "").trim().toLowerCase();
-        if (!status) return "--";
-        if (status === "quota_blocked") return "Quota blocked";
-        return status.split("_").map((part) => part ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : "").join(" ");
-      }, renderVtKeyStatus = function(vtKeyStatus, vtKeyPosture) {
-        const posture = toRecord(vtKeyPosture && Object.keys(vtKeyPosture).length ? vtKeyPosture : vtKeyStatus?.key_posture);
-        const hold = toRecord(vtKeyStatus?.hold);
-        const keys = asRows(vtKeyStatus?.keys);
-
-        renderTile(vtKeyTotalEl, metricFmt(posture.total_keys));
-        renderTile(vtKeyEligibleEl, metricFmt(posture.eligible_keys));
-        renderTile(vtKeyCoolingEl, metricFmt(posture.cooling_keys));
-        renderTile(vtKeyQuotaBlockedEl, metricFmt(posture.quota_blocked_keys));
-        renderTile(vtKeyLeasedEl, metricFmt(posture.leased_keys));
-        renderTile(vtKeyTotalRemainingEl, metricFmt(posture.total_remaining_quota));
-        renderTile(vtKeyEligibleRemainingEl, metricFmt(posture.eligible_remaining_quota));
-        if (vtKeyHoldUntilLabelEl) vtKeyHoldUntilLabelEl.textContent = hold.active_hold ? "Hold until" : "Last hold expired";
-        renderTile(vtKeyHoldUntilEl, hold.hold_until_utc ? formatUtcCompact(hold.hold_until_utc) : "--");
-        renderTile(vtKeyHoldReasonEl, hold.active_hold ? fmt(hold.hold_reason_code, "--") : "No active hold");
-        renderTile(vtKeyLast429KeyEl, fmt(hold.last_429_key_id, "--"));
-        renderTile(vtKeyLast429RetryEl, metricFmt(hold.last_429_retry_after_seconds));
-
-        if (!vtKeyBodyEl) return;
-        if (!keys.length) {
-          vtKeyBodyEl.innerHTML = '<tr><td colspan="6" class="muted">No VT keys configured.</td></tr>';
-          return;
-        }
-
-        vtKeyBodyEl.innerHTML = keys.map((row) => {
-          const keyLabel = `#${fmt(row.api_key_id, "--")} • ${fmt(row.last6, "--")}`;
-          return `
-            <tr>
-              <td>${esc(keyLabel)}</td>
-              <td>${esc(humanizeKeyStatus(row.operator_status))}</td>
-              <td>${esc(metricFmt(row.remaining_quota))}</td>
-              <td>${esc(row.cooldown_until_utc ? formatUtcCompact(row.cooldown_until_utc) : "--")}</td>
-              <td>${esc(row.last_429_at_utc ? formatUtcCompact(row.last_429_at_utc) : "--")}</td>
-              <td>${esc(metricFmt(row.last_429_retry_after_seconds))}</td>
-            </tr>
-          `;
-        }).join("");
       }, renderSchemaHeads = function(heads) {
         if (!schemaHeadPrimaryEl || !schemaHeadPiEl || !schemaHeadMatchEl) return;
         schemaHeadPrimaryEl.textContent = fmt(heads?.primary_head);
@@ -255,7 +197,6 @@
         workflowDebtListEl.innerHTML = "";
         if (!workflowDebt) {
           workflowDebtSummaryEl.textContent = "Workflow debt summary unavailable.";
-          setHidden(workflowDebtCardEl, false);
           return;
         }
         const deprecatedLive = asRows(workflowDebt.deprecated_live_triage_statuses);
@@ -263,10 +204,8 @@
         const legacyQueueActive = asRows(workflowDebt.legacy_queue_actions_active);
         if (!deprecatedLive.length && !unexpectedLive.length && !legacyQueueActive.length) {
           workflowDebtSummaryEl.textContent = "No live workflow vocabulary debt detected.";
-          setHidden(workflowDebtCardEl, true);
           return;
         }
-        setHidden(workflowDebtCardEl, false);
         workflowDebtSummaryEl.textContent = `Deprecated live statuses: ${deprecatedLive.length} | Unexpected live statuses: ${unexpectedLive.length} | Legacy active queue aliases: ${legacyQueueActive.length}`;
         deprecatedLive.forEach((row) => {
           const li = document.createElement("li");
@@ -291,7 +230,6 @@
           rollupStatusEl.className = "notice warn";
           rollupStatusEl.textContent = "Rollup guard unavailable.";
           rollupSummaryEl.textContent = "Unable to verify vt_current rollups.";
-          setHidden(rollupGuardCardEl, false);
           return;
         }
         const stale = Number(guard.stale_permissions_count || 0);
@@ -303,10 +241,8 @@
           rollupStatusEl.className = "notice success";
           rollupStatusEl.textContent = "No rollup drift detected.";
           rollupSummaryEl.textContent = "vt_current matches vt_event for last seen and counts.";
-          setHidden(rollupGuardCardEl, true);
           return;
         }
-        setHidden(rollupGuardCardEl, false);
         rollupStatusEl.className = driftCount <= 10 ? "notice warn" : "notice error";
         rollupStatusEl.textContent = driftCount <= 10 ? "Rollup drift detected (small)." : "Rollup drift detected.";
         rollupSummaryEl.textContent = `Stale rows: ${stale} | Count mismatches: ${mismatches} | Max lag: ${maxLagLabel}`;
@@ -322,22 +258,6 @@
             rollupListEl.appendChild(li);
           });
         }
-      }, syncAdvancedDiagnosticsVisibility = function() {
-        if (!advancedDiagnosticsSectionEl || !advancedDiagnosticsDetailsEl) return;
-        const cards = [
-          schemaGuardCardEl,
-          schemaInventoryCardEl,
-          vtSurfaceCardEl,
-          familyTaxonomyCardEl,
-          rollupGuardCardEl,
-          workflowDebtCardEl
-        ].filter((el) => el instanceof HTMLElement);
-        const visibleCards = cards.filter((el) => el.style.display !== "none");
-        const hasVisible = visibleCards.length > 0;
-        setHidden(advancedDiagnosticsSectionEl, !hasVisible);
-        if (!hasVisible) {
-          advancedDiagnosticsDetailsEl.open = false;
-        }
       };
       const stoplightEl = document.getElementById("health-stoplight");
       const stoplightSub = document.getElementById("health-stoplight-sub");
@@ -346,55 +266,36 @@
       const tileError = document.getElementById("tile-error");
       const tileRetry = document.getElementById("tile-retry");
       const tileStale = document.getElementById("tile-stale");
+      const nextPathEl = document.getElementById("health-next-path");
       const reasonsList = document.getElementById("health-reasons-list");
       const reasonsEmpty = document.getElementById("health-reasons-empty");
+      const metaEl = document.getElementById("health-meta");
       const errorEl = document.getElementById("health-error");
-      const advancedDiagnosticsSectionEl = document.getElementById("advanced-diagnostics-section");
-      const advancedDiagnosticsDetailsEl = document.getElementById("advanced-diagnostics-details");
-      const schemaGuardCardEl = document.getElementById("schema-guard-card");
       const schemaSummaryEl = document.getElementById("schema-guard-summary");
       const schemaListEl = document.getElementById("schema-guard-list");
-      const schemaInventoryCardEl = document.getElementById("schema-inventory-card");
       const schemaInventorySummaryEl = document.getElementById("schema-inventory-summary");
       const schemaInventoryTotalEl = document.getElementById("schema-inventory-total");
       const schemaInventoryAvailableEl = document.getElementById("schema-inventory-available");
       const schemaInventoryMissingColumnsEl = document.getElementById("schema-inventory-missing-columns");
-      const vtSurfaceCardEl = document.getElementById("vt-surface-card");
       const vtSurfaceSummaryEl = document.getElementById("vt-surface-summary");
       const vtSurfaceTotalEl = document.getElementById("vt-surface-total");
       const vtSurfaceAvailableEl = document.getElementById("vt-surface-available");
       const vtSurfaceMissingEl = document.getElementById("vt-surface-missing");
-      const familyTaxonomyCardEl = document.getElementById("family-taxonomy-card");
       const familyTaxonomySummaryEl = document.getElementById("family-taxonomy-summary");
       const familyTaxonomyMismatchEl = document.getElementById("family-taxonomy-mismatch");
       const familyTaxonomySignalOnlyEl = document.getElementById("family-taxonomy-signal-only");
       const familyTaxonomyCatalogOnlyEl = document.getElementById("family-taxonomy-catalog-only");
       const familyTaxonomyHighConflictEl = document.getElementById("family-taxonomy-high-conflict");
-      const vtKeyTotalEl = document.getElementById("vt-key-total");
-      const vtKeyEligibleEl = document.getElementById("vt-key-eligible");
-      const vtKeyCoolingEl = document.getElementById("vt-key-cooling");
-      const vtKeyQuotaBlockedEl = document.getElementById("vt-key-quota-blocked");
-      const vtKeyLeasedEl = document.getElementById("vt-key-leased");
-      const vtKeyTotalRemainingEl = document.getElementById("vt-key-total-remaining");
-      const vtKeyEligibleRemainingEl = document.getElementById("vt-key-eligible-remaining");
-      const vtKeyHoldUntilLabelEl = document.getElementById("vt-key-hold-until-label");
-      const vtKeyHoldUntilEl = document.getElementById("vt-key-hold-until");
-      const vtKeyHoldReasonEl = document.getElementById("vt-key-hold-reason");
-      const vtKeyLast429KeyEl = document.getElementById("vt-key-last-429-key");
-      const vtKeyLast429RetryEl = document.getElementById("vt-key-last-429-retry");
-      const vtKeyBodyEl = document.getElementById("vt-key-body");
       const catalogPrimaryEl = document.getElementById("catalog-primary");
       const catalogPermissionIntelEl = document.getElementById("catalog-permission-intel");
       const catalogSplitModeEl = document.getElementById("catalog-split-mode");
       const schemaHeadPrimaryEl = document.getElementById("schema-head-primary");
       const schemaHeadPiEl = document.getElementById("schema-head-pi");
       const schemaHeadMatchEl = document.getElementById("schema-head-match");
-      const rollupGuardCardEl = document.getElementById("rollup-guard-card");
       const rollupStatusEl = document.getElementById("rollup-guard-status");
       const rollupSummaryEl = document.getElementById("rollup-guard-summary");
       const rollupDetailsEl = document.getElementById("rollup-guard-details");
       const rollupListEl = document.getElementById("rollup-guard-list");
-      const workflowDebtCardEl = document.getElementById("workflow-debt-card");
       const workflowDebtSummaryEl = document.getElementById("workflow-debt-summary");
       const workflowDebtListEl = document.getElementById("workflow-debt-list");
       const blockersGridEl = document.getElementById("health-blockers-grid");
@@ -403,51 +304,9 @@
       const formatUtc = App.formatUtc;
       const displayTz = App.getDisplayTz();
       const ingestBacklogUrl = App.pageUrl("ingest_backlog");
+      const vtKeyDrilldownUrl = App.pageUrl("vt_key_controls");
       const permissionsOverviewUrl = App.pageUrl("permissions_overview");
       const familyTaxonomyUrl = App.pageUrl("family_taxonomy_check");
-      function applyHealthPayload(res, includeDiagnostics) {
-        const data = toRecord(res.data);
-        const control = toRecord(data.system_control);
-        const metrics = toRecord(data.metrics);
-        const holdUntil = control.hold_until_utc;
-        const holdReason = control.hold_reason_code;
-        const holdMs = parseUtcToMs(holdUntil);
-        const isHold = holdMs !== null ? holdMs > Date.now() : !!(holdUntil && String(holdUntil).trim() !== "");
-        const eligibleNow = Number(metrics.eligible_now ?? 0);
-        const processingNow = Number(metrics.processing_now ?? 0);
-        const errorCount = Number(metrics.error_count ?? 0);
-        const retryCount = Number(metrics.retry_wait_count ?? 0);
-        const staleClaims = Number(metrics.stale_claims ?? 0);
-        setStoplight(isHold, holdUntil, holdReason);
-        renderTile(tileEligible, eligibleNow);
-        renderTile(tileProcessing, processingNow);
-        renderTile(tileError, errorCount);
-        renderTile(tileRetry, retryCount);
-        renderTile(tileStale, staleClaims);
-        renderReasons(asRows(metrics.reason_breakdown));
-        renderVtKeyStatus(toRecord(data.vt_key_status), toRecord(data.vt_key_posture));
-
-        let familySummary = {};
-        let schemaHeads = {};
-        let workflowDebt = {};
-        if (includeDiagnostics) {
-          const catalogs = toRecord(data.catalogs);
-          schemaHeads = toRecord(data.schema_heads);
-          familySummary = toRecord(data.family_taxonomy_summary);
-          workflowDebt = toRecord(data.workflow_debt);
-          renderCatalogs(catalogs);
-          renderSchemaHeads(schemaHeads);
-          renderSchemaGuard(toRecord(data.schema_guard));
-          renderSchemaInventory(toRecord(data.schema_inventory));
-          renderVtSurfaceSummary(toRecord(data.vt_surface_summary));
-          renderFamilyTaxonomySummary(familySummary);
-          renderRollupGuard(toRecord(data.rollup_guard));
-          renderWorkflowDebt(workflowDebt);
-          renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt);
-          syncAdvancedDiagnosticsVisibility();
-        }
-
-      }
       async function loadHealth() {
         try {
           App.clearPageError(errorEl);
@@ -467,7 +326,60 @@
             });
             return;
           }
-          applyHealthPayload(res, false);
+          const data = toRecord(res.data);
+          const control = toRecord(data.system_control);
+          const metrics = toRecord(data.metrics);
+          const holdUntil = control.hold_until_utc;
+          const holdReason = control.hold_reason_code;
+          const holdMs = parseUtcToMs(holdUntil);
+          const isHold = holdMs !== null ? holdMs > Date.now() : !!(holdUntil && String(holdUntil).trim() !== "");
+          const eligibleNow = Number(metrics.eligible_now ?? 0);
+          const processingNow = Number(metrics.processing_now ?? 0);
+          const errorCount = Number(metrics.error_count ?? 0);
+          const retryCount = Number(metrics.retry_wait_count ?? 0);
+          const staleClaims = Number(metrics.stale_claims ?? 0);
+          setStoplight(isHold, holdUntil, holdReason);
+          renderTile(tileEligible, eligibleNow);
+          renderTile(tileProcessing, processingNow);
+          renderTile(tileError, errorCount);
+          renderTile(tileRetry, retryCount);
+          renderTile(tileStale, staleClaims);
+          renderReasons(asRows(metrics.reason_breakdown));
+          const catalogs = toRecord(data.catalogs);
+          const schemaHeads = toRecord(data.schema_heads);
+          const familySummary = toRecord(data.family_taxonomy_summary);
+          renderCatalogs(catalogs);
+          renderSchemaHeads(schemaHeads);
+          renderSchemaGuard(toRecord(data.schema_guard));
+          renderSchemaInventory(toRecord(data.schema_inventory));
+          renderVtSurfaceSummary(toRecord(data.vt_surface_summary));
+          renderFamilyTaxonomySummary(familySummary);
+          renderRollupGuard(toRecord(data.rollup_guard));
+          renderWorkflowDebt(toRecord(data.workflow_debt));
+          const workflowDebt = toRecord(data.workflow_debt);
+          const hasWorkflowDebt = asRows(workflowDebt.deprecated_live_triage_statuses).length > 0 || asRows(workflowDebt.unexpected_live_triage_statuses).length > 0 || asRows(workflowDebt.legacy_queue_actions_active).length > 0;
+          renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt);
+          if (isHold) {
+            setNextPath("Next path: VT is blocked by a hold. Check VT Key Drilldown first, then confirm whether queue pressure or retry residue is just a downstream symptom.", "warn");
+          } else if (!schemaHeads.heads_match) {
+            setNextPath("Next path: primary and Permission Intel schema heads are diverged. Treat cross-surface comparisons cautiously until that split is understood.", "warn");
+          } else if (familySummary.risk_class && String(familySummary.risk_class).toLowerCase() === "critical") {
+            setNextPath("Next path: family-taxonomy risk is critical. Use the taxonomy overview and repair queue before treating family-level comparisons as stable evidence.", "warn");
+          } else if (hasWorkflowDebt) {
+            setNextPath("Next path: platform vocabulary debt exists. Align live triage statuses and queue aliases before trusting page-level backlog comparisons across CLI and web.", "warn");
+          } else if (errorCount > 0 || retryCount > 0 || staleClaims > 0) {
+            setNextPath("Next path: scheduler residue exists. Use Run Ledger, Drift Details, and Ingest Backlog to separate retry/error pressure from queue or catalog drift.", "warn");
+          } else if (eligibleNow > 0) {
+            setNextPath("Next path: VT work is eligible now. If enrichment still is not moving, verify key readiness and recent run behavior before changing PI workflow decisions.", "info");
+          } else if (processingNow > 0) {
+            setNextPath("Next path: work is already in flight. Watch Run Ledger and Ingest Backlog before treating this as a taxonomy or Permission Intel problem.", "info");
+          } else {
+            setNextPath("Next path: no immediate VT work is eligible. Check Run Ledger, intake backlog, and sample seeding before forcing downstream workflow actions.", "info");
+          }
+          if (metaEl) {
+            const refreshedAt = toRecord(res.meta).server_utc_now || (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").replace("Z", " UTC");
+            metaEl.textContent = `Last refresh: ${String(refreshedAt)}`;
+          }
         } catch (error) {
           App.renderPageError(errorEl, {
             title: "VT & pipeline health load failed",
@@ -479,32 +391,13 @@
             secondaryActionHref: App.pageUrl("landing"),
             secondaryActionLabel: "Back to landing"
           });
-        }
-      }
-      async function loadDiagnostics() {
-        if (!diagnosticsEndpoint) {
-          return;
-        }
-        try {
-          const res = await App.fetchPayload(diagnosticsEndpoint);
-          if (!res.ok) {
-            return;
-          }
-          applyHealthPayload(res, true);
-        } catch (error) {
-          if (window.console && typeof window.console.warn === "function") {
-            window.console.warn("Health diagnostics refresh failed", error);
-          }
+          setNextPath("Next path: health data is unavailable. Confirm DB/API health first before interpreting VT or PI workflow pages.", "error");
         }
       }
       void loadHealth();
-      void loadDiagnostics();
       window.setInterval(() => {
         void loadHealth();
       }, refreshMs);
-      window.setInterval(() => {
-        void loadDiagnostics();
-      }, diagnosticsRefreshMs);
     }
   }
 })();

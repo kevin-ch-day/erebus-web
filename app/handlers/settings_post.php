@@ -14,8 +14,6 @@ function settings_redirect(array $params = []): void
 }
 
 $action = (string)($_POST['action'] ?? 'save_settings');
-$currentKey = tz_current_key();
-
 if ($action === 'log_clear') {
     $logDir = defined('LOG_DIR') ? (string)LOG_DIR : (APP_ROOT . '/logs');
     $logKey = basename((string)($_POST['log'] ?? ''));
@@ -47,25 +45,11 @@ if ($action === 'log_clear') {
     ]);
 }
 
-$tzInput = (string)($_POST['tz'] ?? $currentKey);
-$tzCanonical = tz_canonical_key($tzInput);
-if ($tzCanonical === null) {
-    $tzKey = $currentKey;
-} else {
-    $tzKey = $tzCanonical;
-}
 $themeKey = isset($_POST['theme_dark']) ? 'dark' : 'light';
 
 if (theme_canonical($themeKey) === null) {
     settings_redirect(['err' => 'theme']);
 }
 
-tz_set_cookie($tzKey);
 theme_set_cookie($themeKey);
-
-$params = ['saved' => '1'];
-if ($tzCanonical === null) {
-    $params['warn'] = 'tz';
-}
-
-settings_redirect($params);
+settings_redirect(['saved' => '1']);

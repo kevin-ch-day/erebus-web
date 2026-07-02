@@ -1,69 +1,31 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'vite';
 
 const root = process.cwd();
+const pagesDir = path.join(root, 'frontend/pages');
 
-const entries = [
-  {
-    entry: 'frontend/pages/landing-page.ts',
+function pageControllerName(fileName) {
+  const stem = fileName.replace(/\.ts$/, '').replace(/-page$/, '');
+  return `Erebus${stem.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('')}Page`;
+}
+
+function pageOutputFileName(fileName) {
+  const stem = fileName.replace(/\.ts$/, '').replace(/-page$/, '');
+  return `${stem.replace(/-/g, '_')}_page.js`;
+}
+
+const pageEntries = fs.readdirSync(pagesDir)
+  .filter((fileName) => fileName.endsWith('-page.ts'))
+  .sort()
+  .map((fileName) => ({
+    entry: path.join('frontend/pages', fileName),
     outDir: 'public/assets/js/pages',
-    fileName: 'landing_page.js',
-    name: 'ErebusLandingPage',
-  },
-  {
-    entry: 'frontend/pages/stack-audit-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'stack_audit_page.js',
-    name: 'ErebusStackAuditPage',
-  },
-  {
-    entry: 'frontend/pages/family-taxonomy-queue-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'family_taxonomy_queue_page.js',
-    name: 'ErebusFamilyTaxonomyQueuePage',
-  },
-  {
-    entry: 'frontend/pages/family-taxonomy-repair-planning-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'family_taxonomy_repair_planning_page.js',
-    name: 'ErebusFamilyTaxonomyRepairPlanningPage',
-  },
-  {
-    entry: 'frontend/pages/family-taxonomy-check-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'family_taxonomy_check_page.js',
-    name: 'ErebusFamilyTaxonomyCheckPage',
-  },
-  {
-    entry: 'frontend/pages/health-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'health_page.js',
-    name: 'ErebusHealthPage',
-  },
-  {
-    entry: 'frontend/pages/check-hash-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'check_hash_page.js',
-    name: 'ErebusCheckHashPage',
-  },
-  {
-    entry: 'frontend/pages/samples-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'samples_page.js',
-    name: 'ErebusSamplesPage',
-  },
-  {
-    entry: 'frontend/pages/submit-artifact-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'submit_artifact_page.js',
-    name: 'ErebusSubmitArtifactPage',
-  },
-  {
-    entry: 'frontend/pages/sample-detail-page.ts',
-    outDir: 'public/assets/js/pages',
-    fileName: 'sample_detail_page.js',
-    name: 'ErebusSampleDetailPage',
-  },
+    fileName: pageOutputFileName(fileName),
+    name: pageControllerName(fileName),
+  }));
+
+const moduleEntries = [
   {
     entry: 'frontend/modules/samples/samples-query-builder.ts',
     outDir: 'public/assets/js/modules/samples',
@@ -114,6 +76,8 @@ const entries = [
   },
 ];
 
+const entries = [...pageEntries, ...moduleEntries];
+
 for (const item of entries) {
   await build({
     configFile: false,
@@ -138,3 +102,5 @@ for (const item of entries) {
     },
   });
 }
+
+console.log(`Built ${entries.length} frontend controllers (${pageEntries.length} pages, ${moduleEntries.length} modules).`);

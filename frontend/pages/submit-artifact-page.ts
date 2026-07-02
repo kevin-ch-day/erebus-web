@@ -1,4 +1,6 @@
 import type { AppJsonFailure, AppJsonSuccess, AppSurface, JsonRecord } from '../types/app-globals';
+import { asRows } from '../shared/dom';
+import { initPipelineEnginePanelLive } from '../shared/pipeline-engine-panel-live';
 
 type QueueRow = {
   artifact_hash: string;
@@ -21,10 +23,6 @@ type QueueSummaryPayload = {
 };
 
 const root = document.getElementById('submit-artifact-page') as HTMLElement | null;
-
-function asRows<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
 
 if (root && window.App) {
   const App = window.App as AppSurface;
@@ -385,6 +383,16 @@ if (root && window.App) {
       csvInput.value = '';
       clearBox(statusBox);
       clearBox(errorBox);
+    });
+  }
+
+  const pipelineEndpoint = root.dataset.pipelineEndpoint || '';
+  if (pipelineEndpoint) {
+    initPipelineEnginePanelLive(App, {
+      endpoint: pipelineEndpoint,
+      idPrefix: root.dataset.pipelinePrefix || 'submit-artifact-engine',
+      liveMetaId: root.dataset.pipelineLiveMeta || undefined,
+      refreshSeconds: Number(root.dataset.pipelineRefreshSeconds || '30') || 30,
     });
   }
 }

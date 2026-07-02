@@ -10,7 +10,8 @@
     "build:pages": "node scripts/build-page-controllers.mjs",
     "build": "npm run build:pages && vite build",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run typecheck && npm run build",
+    "ci:check": "bash scripts/ci-check.sh"
   },
   "dependencies": {
     "alpinejs": "^3.14.9"

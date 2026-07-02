@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../lib/app_config.php';
 require_once __DIR__ . '/../lib/url.php';
+require_once __DIR__ . '/../lib/pipeline_panel.php';
+require_once __DIR__ . '/../database/db_func.php';
 require_once __DIR__ . '/../database/services/intake_service.php';
 
 $title = 'Pending Source Mix';
@@ -10,6 +12,27 @@ $laneFilter = trim((string)($_GET['lane'] ?? ''));
 $limit = clamp_int($_GET['limit'] ?? 50, 5, 100, 50);
 $loadError = null;
 $sources = [];
+try {
+    $mixSnapshot = db_pending_source_mix_snapshot($laneFilter !== '' ? $laneFilter : null, $limit);
+    $pipelinePanel = [
+        'pipeline' => is_array($mixSnapshot['pipeline'] ?? null) ? $mixSnapshot['pipeline'] : [],
+        'hint' => db_pipeline_operator_hint(is_array($mixSnapshot['pipeline'] ?? null) ? $mixSnapshot['pipeline'] : []),
+        'lane_summary' => db_pipeline_lane_summary(
+            is_array($mixSnapshot['pipeline']['queue_lanes'] ?? null) ? $mixSnapshot['pipeline']['queue_lanes'] : []
+        ),
+        'recommended_lane' => is_string($mixSnapshot['recommended_lane'] ?? null) ? $mixSnapshot['recommended_lane'] : null,
+        'source' => (string)(is_array($mixSnapshot['pipeline'] ?? null) ? ($mixSnapshot['pipeline']['source'] ?? 'db') : 'db'),
+    ];
+} catch (Throwable $ignored) {
+    $pipelinePanel = pipeline_panel_load(true);
+}
+
+$snapshotApiUrl = api_url('pending_source_mix_snapshot.php');
+if ($laneFilter !== '') {
+    $snapshotApiUrl .= '?' . http_build_query(['lane' => $laneFilter, 'limit' => $limit]);
+} else {
+    $snapshotApiUrl .= '?' . http_build_query(['limit' => $limit]);
+}
 
 try {
     $sources = db_ingest_backlog_pending_sources($limit, $laneFilter !== '' ? $laneFilter : null);
@@ -66,6 +89,11 @@ $topAndroidSource = $topSource($androidSources);
 $topGenericSource = $topSource($genericSources);
 $topOtherSource = $topSource($otherSources);
 ?>
+
+<div id="pending-source-mix-page"
+     style="display:none;"
+     data-endpoint="<?= h($snapshotApiUrl) ?>"
+     data-refresh-seconds="30"></div>
 
 <style>
 .source-mix-summary-grid {
@@ -157,7 +185,8 @@ $topOtherSource = $topSource($otherSources);
             Android feeds stay first, then the generic reservoir, then other feeds.
         </p>
         <div class="page-hero-actions">
-            <a class="btn btn-primary" href="<?= h($backlogHref) ?>">Back to Ingest Backlog</a>
+            <a class="btn btn-primary" href="<?= h(page_url('pipeline_ops')) ?>">Pipeline Ops</a>
+            <a class="btn" href="<?= h($backlogHref) ?>">Back to Ingest Backlog</a>
             <a class="btn" href="<?= h(page_url('check_hash')) ?>">Check Hash</a>
             <a class="btn" href="<?= h(page_url('submit_artifact')) ?>">Submit Artifact</a>
         </div>
@@ -168,11 +197,11 @@ $topOtherSource = $topSource($otherSources);
         <div class="hero-metric-grid">
             <div class="hero-metric">
                 <div class="hero-metric-label">Listed sources</div>
-                <div class="hero-metric-value"><?= h(number_format($listedSourceCount)) ?></div>
+                <div class="hero-metric-value" id="source-mix-source-count"><?= h(number_format($listedSourceCount)) ?></div>
             </div>
             <div class="hero-metric">
                 <div class="hero-metric-label">Pending rows shown</div>
-                <div class="hero-metric-value"><?= h(number_format($pendingRowTotal)) ?></div>
+                <div class="hero-metric-value" id="source-mix-pending-total"><?= h(number_format($pendingRowTotal)) ?></div>
             </div>
             <div class="hero-metric">
                 <div class="hero-metric-label">Largest class</div>
@@ -189,6 +218,16 @@ $topOtherSource = $topSource($otherSources);
 <?php if ($loadError !== null): ?>
     <div class="notice error" style="margin-bottom: 16px;"><?= h($loadError) ?></div>
 <?php endif; ?>
+
+<?php
+render_pipeline_engine_panel($pipelinePanel, [
+    'id_prefix' => 'source-mix-engine',
+    'variant' => 'notice',
+    'title' => 'Engine context',
+    'slice_note' => 'Source mix is local; engine recommendation reflects full-queue posture.',
+    'live_meta_id' => 'source-mix-live-meta',
+]);
+?>
 
 <section class="section-shell">
     <div class="section-shell-header">
@@ -238,9 +277,9 @@ $topOtherSource = $topSource($otherSources);
                     <div class="detail-card-title">Android feeds</div>
                     <div class="source-mix-class-sub">Governed APK-oriented intake sources.</div>
                 </div>
-                <span class="badge ok"><?= number_format($androidSourceCount) ?> source(s)</span>
+                <span class="badge ok"><span id="source-mix-android-count"><?= number_format($androidSourceCount) ?></span> source(s)</span>
             </div>
-            <div class="source-mix-class-metric"><?= number_format($androidPendingTotal) ?></div>
+            <div class="source-mix-class-metric" id="source-mix-android-pending"><?= number_format($androidPendingTotal) ?></div>
             <div class="source-mix-class-sub">Pending rows across Android feed sources</div>
             <div class="source-mix-top-source">
                 <div class="detail-label">Top source</div>
@@ -260,9 +299,9 @@ $topOtherSource = $topSource($otherSources);
                     <div class="detail-card-title">Generic reservoir</div>
                     <div class="source-mix-class-sub">Broad discovery backlog kept separate from governed intake.</div>
                 </div>
-                <span class="badge warn"><?= number_format($genericSourceCount) ?> source(s)</span>
+                <span class="badge warn"><span id="source-mix-generic-count"><?= number_format($genericSourceCount) ?></span> source(s)</span>
             </div>
-            <div class="source-mix-class-metric"><?= number_format($genericPendingTotal) ?></div>
+            <div class="source-mix-class-metric" id="source-mix-generic-pending"><?= number_format($genericPendingTotal) ?></div>
             <div class="source-mix-class-sub">Pending rows across generic reservoir sources</div>
             <div class="source-mix-top-source">
                 <div class="detail-label">Top source</div>
@@ -282,9 +321,9 @@ $topOtherSource = $topSource($otherSources);
                     <div class="detail-card-title">Other feeds</div>
                     <div class="source-mix-class-sub">LAMDA and other non-Android/non-reservoir sources.</div>
                 </div>
-                <span class="badge muted"><?= number_format($otherSourceCount) ?> source(s)</span>
+                <span class="badge muted"><span id="source-mix-other-count"><?= number_format($otherSourceCount) ?></span> source(s)</span>
             </div>
-            <div class="source-mix-class-metric"><?= number_format($otherPendingTotal) ?></div>
+            <div class="source-mix-class-metric" id="source-mix-other-pending"><?= number_format($otherPendingTotal) ?></div>
             <div class="source-mix-class-sub">Pending rows across other feed sources</div>
             <div class="source-mix-top-source">
                 <div class="detail-label">Top source</div>

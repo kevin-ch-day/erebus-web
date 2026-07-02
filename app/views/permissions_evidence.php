@@ -16,10 +16,6 @@ $defaultReturn = page_url('permissions_triage');
 $returnUrl = resolve_internal_return_url($returnParam, $defaultReturn);
 $reviewUrl = $permission !== '' ? page_url('permissions_review', ['permission' => $permission, 'return' => $returnUrl]) : '';
 $evidenceUrl = api_url('android_permission_evidence.php');
-$pageScripts = [
-    'assets/js/permission_intel_shared.js',
-    'assets/js/pages/permissions_evidence_page.js',
-];
 ?>
 
 <!-- Anchors: backend decides truth; evidence is read-only. -->

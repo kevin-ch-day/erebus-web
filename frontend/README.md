@@ -18,10 +18,13 @@ What is included:
   - topbar DB health pill
   - topbar clock
   - shared Permission Intel helper layer
-- one migrated workflow page:
+- migrated workflow pages:
   - `permissions-review`
   - `analysis-fusion`
   - `vt-confidence`
+  - `sample-detail`
+  - `samples`
+  - `time-reference`
 
 What is intentionally not included yet:
 
@@ -77,11 +80,15 @@ Migrated page modules:
 - `pages/permissions-review.ts`
 - `pages/analysis-fusion.ts`
 - `pages/vt-confidence.ts`
+- `pages/sample-detail-page.ts`
+- `pages/samples-page.ts`
+- `pages/time-reference-page.ts`
 
 ## Best next steps
 
 1. Migrate `permissions-triage`
 2. Migrate `permissions-overview`
-3. Migrate `samples` / `sample-detail` workflow modules
-4. Decide whether to keep progressive enhancement or later adopt a fuller PHP
+3. Migrate `settings` / remaining workspace utility pages
+4. Replace remaining legacy page globals with typed namespaces or shared modules
+5. Decide whether to keep progressive enhancement or later adopt a fuller PHP
    framework such as Laravel for backend structure

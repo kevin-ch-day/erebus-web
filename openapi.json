@@ -154,6 +154,78 @@
         }
       }
     },
+    "/api.php/pipeline_status.php": {
+      "get": {
+        "summary": "Fetch live pipeline posture and engine recommendation",
+        "operationId": "getPipelineStatus",
+        "responses": {
+          "200": {
+            "description": "Pipeline status envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/StandardEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/pipeline_activity.php": {
+      "get": {
+        "summary": "Fetch pipeline posture plus recent run ledger activity",
+        "operationId": "getPipelineActivity",
+        "responses": {
+          "200": {
+            "description": "Pipeline activity envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/StandardEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/ingest_backlog_snapshot.php": {
+      "get": {
+        "summary": "Fetch ingest backlog totals, lanes, and pipeline posture",
+        "operationId": "getIngestBacklogSnapshot",
+        "responses": {
+          "200": {
+            "description": "Ingest backlog snapshot envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/StandardEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.php/pending_source_mix_snapshot.php": {
+      "get": {
+        "summary": "Fetch pending source mix with pipeline posture",
+        "operationId": "getPendingSourceMixSnapshot",
+        "responses": {
+          "200": {
+            "description": "Pending source mix snapshot envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/$defs/StandardEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api.php/health.php": {
       "get": {
         "summary": "Fetch operator health and catalog state",

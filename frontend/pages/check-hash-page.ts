@@ -1,4 +1,6 @@
 import type { AppJsonFailure, AppJsonSuccess, AppSurface, JsonRecord } from '../types/app-globals';
+import { asRows, toRecord } from '../shared/dom';
+import { initPipelineEnginePanelLive } from '../shared/pipeline-engine-panel-live';
 
 type QueueSummaryPayload = {
   accepted?: unknown;
@@ -45,14 +47,6 @@ type ActionLink = {
 };
 
 const root = document.getElementById('check-hash-page') as HTMLElement | null;
-
-function toRecord(value: unknown): JsonRecord {
-  return value && typeof value === 'object' ? (value as JsonRecord) : {};
-}
-
-function asRows<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
 
 if (root && window.App) {
   const App = window.App as AppSurface;
@@ -456,5 +450,15 @@ if (root && window.App) {
       });
     updateQueueBtn();
     queueBtn.addEventListener('click', () => { void queueArtifact(); });
+  }
+
+  const pipelineEndpoint = root.dataset.pipelineEndpoint || '';
+  if (pipelineEndpoint) {
+    initPipelineEnginePanelLive(App, {
+      endpoint: pipelineEndpoint,
+      idPrefix: root.dataset.pipelinePrefix || 'check-hash-engine',
+      liveMetaId: root.dataset.pipelineLiveMeta || undefined,
+      refreshSeconds: Number(root.dataset.pipelineRefreshSeconds || '30') || 30,
+    });
   }
 }

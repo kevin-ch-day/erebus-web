@@ -1,12 +1,56 @@
 (function() {
   "use strict";
-  const root = document.getElementById("landing-page");
   function toRecord(value) {
     return value && typeof value === "object" ? value : {};
   }
   function asRows(value) {
     return Array.isArray(value) ? value : [];
   }
+  function formatQueueLaneSummary(lanes) {
+    if (!lanes) return "";
+    const parts = [];
+    const lamdaPending = Number(lanes.lamda_pending ?? 0);
+    const reservoirPending = Number(lanes.reservoir_pending ?? 0);
+    const lamdaVtReady = lanes.lamda_vt_ready;
+    if (lamdaPending > 0) {
+      parts.push(`LAMDA ${lamdaPending.toLocaleString()} pending`);
+    }
+    if (reservoirPending > 0) {
+      parts.push(`reservoir ${reservoirPending.toLocaleString()} pending`);
+    }
+    if (lamdaVtReady !== null && lamdaVtReady !== void 0 && lamdaVtReady !== "") {
+      const ready = Number(lamdaVtReady);
+      if (Number.isFinite(ready) && ready > 0) {
+        parts.push(`${ready.toLocaleString()} LAMDA VT-ready`);
+      }
+    }
+    const topLane = String(lanes.top_workload_lane || "").trim();
+    if (topLane !== "" && parts.length === 0) {
+      parts.push(`top lane ${topLane}`);
+    }
+    return parts.join(" · ");
+  }
+  function pipelineEngineHint(snapshot) {
+    if (!snapshot) return null;
+    const runPlan = snapshot.run_plan;
+    const runCommand = String(runPlan?.command || "").trim();
+    const runSummary = String(snapshot.recommendation?.summary || "").trim();
+    if (runSummary !== "") {
+      const command = runCommand || String(snapshot.recommendation?.command || "").trim();
+      return command !== "" ? `Engine: ${runSummary} (${command})` : `Engine: ${runSummary}`;
+    }
+    return null;
+  }
+  function pipelineLaneChips(snapshot) {
+    const lanes = snapshot?.queue_lanes;
+    const summary = formatQueueLaneSummary(lanes);
+    if (!summary) return [];
+    return summary.split(" · ").filter(Boolean);
+  }
+  function asPipelineSnapshot(value) {
+    return value && typeof value === "object" ? value : {};
+  }
+  const root = document.getElementById("landing-page");
   if (root && window.App) {
     let renderChipRow = function(el, items) {
       if (!el) return;
@@ -38,6 +82,11 @@
       }
       if (priorityNoticeEl) priorityNoticeEl.textContent = "Live data is unavailable. Start with VT & pipeline health.";
     }, render = function(snapshot) {
+      const pipeline = asPipelineSnapshot(snapshot.pipeline);
+      pipeline.recommendation || {};
+      const queuePending = Number(pipeline.pipeline?.queue_pending || 0);
+      const stateEligible = Number(pipeline.pipeline?.state_eligible_now || 0);
+      const laneChips = pipelineLaneChips(pipeline);
       const health = toRecord(snapshot.health);
       const family = toRecord(snapshot.family);
       const familySummary = toRecord(family.summary);
@@ -74,11 +123,24 @@
       if (familyNoteEl) familyNoteEl.textContent = `${fmt(signalOnly)} signal only | ${fmt(catalogOnly)} catalog only`;
       if (stackGapEl) stackGapEl.textContent = fmt(cleanBenchmarkRows);
       if (stackNoteEl) stackNoteEl.textContent = `${fmt(projectionDebt)} projection debt | ${fmt(heldPersistedRows)} held persisted`;
-      if (healthMetricEl) healthMetricEl.textContent = holdUntil !== "" ? "Held" : fmt(eligible);
-      if (healthSummaryEl) {
-        healthSummaryEl.textContent = holdUntil !== "" ? "VT is currently held. Stay on state, keys, and recent run errors before touching workflow queues." : `Eligible now ${fmt(eligible)} | processing ${fmt(processing)} | errors ${fmt(errors)}.`;
+      if (healthMetricEl) {
+        if (holdUntil !== "") {
+          healthMetricEl.textContent = "Held";
+        } else if (queuePending > 0 && stateEligible === 0) {
+          healthMetricEl.textContent = fmt(queuePending);
+        } else if (queuePending > 0 && queuePending >= stateEligible) {
+          healthMetricEl.textContent = fmt(queuePending);
+        } else {
+          healthMetricEl.textContent = fmt(eligible);
+        }
       }
-      renderChipRow(healthChipsEl, reasons.length ? reasons : ["No active reason breakdown"]);
+      if (healthSummaryEl) {
+        healthSummaryEl.textContent = holdUntil !== "" ? "VT is currently held. Stay on state, keys, and recent run errors before touching workflow queues." : laneChips.length > 0 ? `Eligible now ${fmt(eligible)} | ${laneChips.join(" · ")}.` : `Eligible now ${fmt(eligible)} | processing ${fmt(processing)} | errors ${fmt(errors)}.`;
+      }
+      renderChipRow(healthChipsEl, [
+        ...laneChips,
+        ...reasons.length ? reasons : ["No active reason breakdown"]
+      ].filter(Boolean));
       if (familyMetricEl) familyMetricEl.textContent = fmt(highConflict);
       if (familySummaryEl) {
         familySummaryEl.textContent = `Mismatch ${fmt(mismatch)} | high-conflict ${fmt(highConflict)} | risk ${riskClass}.`;
@@ -125,8 +187,13 @@
         }).join("");
       }
       let recommendation = "Dataset curation is stable enough to work the governed benchmark and taxonomy queues directly.";
-      if (holdUntil !== "") {
+      const engineHint = pipelineEngineHint(pipeline);
+      if (engineHint !== null) {
+        recommendation = engineHint.replace(/^Engine:\s*/, "");
+      } else if (holdUntil !== "") {
         recommendation = "Start with VT & pipeline health. Enrichment is currently held.";
+      } else if (queuePending > 0 && eligible === 0) {
+        recommendation = `${fmt(queuePending)} ingest-queue row(s) pending with no vt_state-eligible work — open Ingest Backlog or run erebus pipeline run.`;
       } else if (errors > 0 || retryWait > 20 || staleClaims > 0) {
         recommendation = "Start with VT & pipeline health. Scheduler residue or retries are creating operator drag.";
       } else if (mismatch > 800 || highConflict > 500) {
@@ -135,9 +202,15 @@
         recommendation = "Dataset curation still has authority debt. Use Type Benchmark and Authority Consistency Debt before making stronger readiness claims.";
       }
       if (priorityNoticeEl) priorityNoticeEl.textContent = recommendation;
+      if (healthIngestLinkEl) {
+        healthIngestLinkEl.style.display = queuePending > 0 ? "" : "none";
+      }
     };
     const App = window.App;
     const endpoint = root.dataset.endpoint || "";
+    const refreshSeconds = Number(root.dataset.refreshSeconds || "30") || 30;
+    const refreshMs = Math.max(10, refreshSeconds) * 1e3;
+    const liveMetaEl = document.getElementById("landing-live-meta");
     const esc = App.escapeHtml;
     const fmt = App.fmt;
     const priorityNoticeEl = document.getElementById("landing-priority-notice");
@@ -152,6 +225,7 @@
     const healthMetricEl = document.getElementById("landing-health-metric");
     const healthSummaryEl = document.getElementById("landing-health-summary");
     const healthChipsEl = document.getElementById("landing-health-chips");
+    const healthIngestLinkEl = document.getElementById("landing-health-ingest-link");
     const familyMetricEl = document.getElementById("landing-family-metric");
     const familySummaryEl = document.getElementById("landing-family-summary");
     const familyChipsEl = document.getElementById("landing-family-chips");
@@ -170,7 +244,13 @@
         return;
       }
       render(toRecord(res.data));
+      if (liveMetaEl) {
+        liveMetaEl.textContent = `Live refresh: ${String(res.meta?.generated_at_utc || res.meta?.server_utc_now || "ok")}`;
+      }
     }
     void load();
+    window.setInterval(() => {
+      void load();
+    }, refreshMs);
   }
 })();

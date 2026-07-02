@@ -11,10 +11,6 @@ $title = 'Permission Overview';
 $queryLimit = max(10, min((int)($_GET['limit'] ?? 25), 100));
 $intelUrl = api_url('android_permission_intelligence.php');
 $classificationGapsUrl = api_url('android_permission_classification_gaps.php');
-$pageScripts = [
-    'assets/js/permission_intel_shared.js',
-    'assets/js/pages/permissions_overview_page.js',
-];
 ?>
 
 <section class="page-hero">
@@ -55,7 +51,8 @@ $pageScripts = [
      data-intel-endpoint="<?= h($intelUrl) ?>"
      data-classification-gaps-endpoint="<?= h($classificationGapsUrl) ?>"
      data-limit="<?= (int)$queryLimit ?>"
-     data-flag-phase2b="<?= FEATURE_PHASE2B_READONLY ? '1' : '0' ?>"></div>
+     data-flag-phase2b="<?= FEATURE_PHASE2B_READONLY ? '1' : '0' ?>"
+     data-refresh-seconds="60"></div>
 
 <div class="pi-page-shell" id="perm-overview-shell">
     <div class="detail-card pi-page-loading-card" id="perm-overview-loading-card">
@@ -70,6 +67,7 @@ $pageScripts = [
             <h2 class="section-shell-title">Workflow posture</h2>
         </div>
         <div class="muted" id="perm-health-updated">Updated: --</div>
+        <div class="muted" style="font-size:12px;" id="perm-overview-live-meta">Live refresh pending…</div>
     </div>
     <div class="detail-grid">
         <div class="detail-card">

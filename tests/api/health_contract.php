@@ -36,6 +36,21 @@ if ($response === false) {
             $errors[] = 'Expected data to be an object.';
         }
 
+        if (!array_key_exists('pipeline', $data)) {
+            $errors[] = 'Missing health.pipeline block.';
+        }
+
+        $pipelineBlock = is_array($data['pipeline'] ?? null) ? $data['pipeline'] : [];
+        if ($pipelineBlock !== [] && !array_key_exists('queue_lanes', $pipelineBlock)) {
+            $errors[] = 'Missing health.pipeline.queue_lanes block.';
+        }
+        $queueLanes = is_array($pipelineBlock['queue_lanes'] ?? null) ? $pipelineBlock['queue_lanes'] : [];
+        foreach (['lamda_pending', 'reservoir_pending'] as $laneKey) {
+            if ($pipelineBlock !== [] && !array_key_exists($laneKey, $queueLanes)) {
+                $errors[] = sprintf('Missing health.pipeline.queue_lanes.%s', $laneKey);
+            }
+        }
+
         if ($meta === []) {
             $errors[] = 'Expected meta to be an object.';
         }

@@ -86,6 +86,7 @@ export interface PermissionIntelSurface {
   queueStatusLabels: Record<string, string>;
   queueStatusLabel(statusKey: unknown): string;
   queueStatusBadge(statusKey: unknown): { label: string; className: string };
+  triagePriorityBucket(statusKey: unknown): number;
   setLov(lov: unknown): void;
   getLov(): unknown;
   fetchLov(endpoint: string): Promise<unknown>;
@@ -93,7 +94,7 @@ export interface PermissionIntelSurface {
   formatUtcDual(value: unknown): { primary: string; secondary: string };
   bindEnterReload(elements: Array<EventTarget | null | undefined>, handler: () => void): void;
   renderError(errorEl: HTMLElement | null, title: string, detail: string): void;
-  createReadonlyCatalogPage(options: Record<string, unknown>): {
+  createReadonlyCatalogPage(options: ReadonlyCatalogPageOptions): {
     loadPage: () => Promise<void>;
     resetAndLoad: () => Promise<void>;
     primeLov: () => Promise<void>;
@@ -101,6 +102,23 @@ export interface PermissionIntelSurface {
     getPage: () => number;
   };
 }
+
+export type ReadonlyCatalogPageOptions = {
+  endpoint: string;
+  lovEndpoint?: string;
+  pageSize?: number;
+  bodyEl: HTMLElement | null;
+  metaEl: HTMLElement | null;
+  errorEl: HTMLElement | null;
+  colSpan?: number;
+  loadMessage?: string;
+  emptyMessage?: string;
+  emptyMeta?: string;
+  renderMetaText?: (meta: JsonRecord) => string;
+  buildParams?: () => Record<string, string> | URLSearchParams;
+  renderRow?: (row: JsonRecord) => string;
+  loadLov?: (lov: unknown) => void;
+};
 
 declare global {
   interface Window {

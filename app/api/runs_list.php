@@ -15,6 +15,7 @@ try {
 
     $filters = [
         'q' => get_str('q', 128, ''),
+        'stopped_reason' => get_str('stopped_reason', 128, ''),
         'page' => $page,
         'page_size' => $pageSize,
     ];

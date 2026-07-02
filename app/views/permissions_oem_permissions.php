@@ -8,10 +8,6 @@ require_once __DIR__ . '/../lib/url.php';
 $title = 'OEM Permissions';
 $permissionsUrl = api_url('android_permission_oem_permissions.php');
 $lovUrl = api_url('android_permission_lov.php');
-$pageScripts = [
-    'assets/js/permission_intel_shared.js',
-    'assets/js/pages/permissions_oem_permissions_page.js',
-];
 ?>
 
 <!-- Anchors: backend decides truth; catalog pages are read-only until workflow is wired. -->

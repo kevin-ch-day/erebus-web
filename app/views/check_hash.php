@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../lib/app_config.php';
 require_once __DIR__ . '/../lib/url.php';
+require_once __DIR__ . '/../lib/pipeline_panel.php';
 require_once __DIR__ . '/../lib/artifact_sources.php';
 
 $title = 'Check Hash';
 $prefillHash = trim((string)($_GET['hash'] ?? ''));
 $result = (string)($_GET['result'] ?? '');
 $showIntake = $result === 'not_found';
+$pipelinePanel = pipeline_panel_load(true);
 $lookupEndpoint = api_url('artifact_hash_lookup.php');
 $ingestEndpoint = api_url('artifact_ingest_queue.php');
 $sampleBaseUrl = page_url('sample');
@@ -21,7 +23,11 @@ $submitArtifactUrl = page_url('submit_artifact');
      data-lookup-endpoint="<?= h($lookupEndpoint) ?>"
      data-ingest-endpoint="<?= h($ingestEndpoint) ?>"
      data-sample-base="<?= h($sampleBaseUrl) ?>"
-     data-backlog-base="<?= h($backlogBaseUrl) ?>"></div>
+     data-backlog-base="<?= h($backlogBaseUrl) ?>"
+     data-pipeline-endpoint="<?= h(api_url('pipeline_status.php')) ?>"
+     data-pipeline-prefix="check-hash-engine"
+     data-pipeline-live-meta="check-hash-engine-live-meta"
+     data-pipeline-refresh-seconds="30"></div>
 
 <section class="page-hero">
     <div class="page-hero-media">
@@ -38,6 +44,7 @@ $submitArtifactUrl = page_url('submit_artifact');
         </p>
         <div class="page-hero-actions">
             <a class="btn btn-primary" href="#hash-lookup">Check a hash</a>
+            <a class="btn" href="<?= h(page_url('pipeline_ops')) ?>">Pipeline Ops</a>
             <a class="btn" href="<?= h($backlogBaseUrl) ?>">Open Ingest Backlog</a>
             <a class="btn" href="<?= h($submitArtifactUrl) ?>">Bulk Submit Artifact</a>
         </div>
@@ -65,6 +72,16 @@ $submitArtifactUrl = page_url('submit_artifact');
         </div>
     </aside>
 </section>
+
+<?php
+render_pipeline_engine_panel($pipelinePanel, [
+    'id_prefix' => 'check-hash-engine',
+    'variant' => 'compact',
+    'title' => 'Queue posture before intake',
+    'copy' => true,
+    'live_meta_id' => 'check-hash-engine-live-meta',
+]);
+?>
 
 <?php if ($prefillHash !== ''): ?>
     <div class="detail-card" style="margin-bottom: 16px;">

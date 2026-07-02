@@ -14,12 +14,6 @@ $intelUrl = api_url('android_permission_intelligence.php');
 $triageStatuses = perm_operator_triage_statuses_with_metadata();
 $actionableStatuses = perm_actionable_triage_status_keys();
 $resolvedStatuses = perm_resolved_triage_status_keys();
-$pageScripts = [
-    'assets/js/permission_intel_shared.js',
-    'assets/js/modules/perm_triage/permission_triage_table_renderer.js',
-    'assets/js/modules/perm_triage/permission_triage_session.js',
-    'assets/js/pages/permissions_triage_page.js',
-];
 ?>
 
 <section class="page-hero">

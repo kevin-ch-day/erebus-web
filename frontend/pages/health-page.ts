@@ -1,4 +1,10 @@
 import type { AppSurface, JsonRecord } from '../types/app-globals';
+import {
+  asPipelineSnapshot,
+  formatQueueLaneSummary,
+  pipelineEngineHint,
+  type PipelineStatusSnapshot,
+} from '../shared/pipeline-posture';
 
 type HealthReason = {
   reason_code?: unknown;
@@ -125,7 +131,7 @@ if (root && window.App) {
     const formatUtc = App.formatUtc;
     const displayTz = App.getDisplayTz();
     const ingestBacklogUrl = App.pageUrl('ingest_backlog');
-    const vtKeyDrilldownUrl = App.pageUrl('vt_key_controls');
+    const vtKeyDrilldownUrl = `${App.currentPageUrl()}#vt-key-posture`;
     const permissionsOverviewUrl = App.pageUrl('permissions_overview');
     const familyTaxonomyUrl = App.pageUrl('family_taxonomy_check');
 
@@ -140,6 +146,10 @@ if (root && window.App) {
       return String(value);
     }
 
+    function pipelineNextPath(pipeline: PipelineStatusSnapshot | null): string | null {
+      return pipelineEngineHint(pipeline);
+    }
+
     function renderBlockers(
       isHold: boolean,
       holdUntil: unknown,
@@ -148,10 +158,15 @@ if (root && window.App) {
       familySummary: FamilyTaxonomySummary | null,
       schemaHeads: JsonRecord | null,
       workflowDebt: WorkflowDebt | null,
+      pipeline: PipelineStatusSnapshot | null,
     ): void {
       if (!blockersGridEl) return;
 
       const pendingLike = Number(metrics.retry_wait_count ?? 0) + Number(metrics.processing_now ?? 0);
+      const queuePending = Number(pipeline?.pipeline?.queue_pending ?? 0);
+      const queueProcessing = Number(pipeline?.pipeline?.queue_processing ?? 0);
+      const stateEligible = Number(pipeline?.pipeline?.state_eligible_now ?? metrics.eligible_now ?? 0);
+      const laneSummary = formatQueueLaneSummary(pipeline?.queue_lanes);
       const taxonomyRisk = familySummary?.risk_class ? String(familySummary.risk_class).toUpperCase() : 'UNKNOWN';
       const taxonomyMismatch = metricFmt(familySummary?.mismatch_rows);
       const schemaSplit = schemaHeads?.heads_match ? 'Aligned' : 'Diverged';
@@ -172,6 +187,16 @@ if (root && window.App) {
             : 'No active hold is blocking enrichment right now.',
           actionHref: vtKeyDrilldownUrl,
           actionLabel: 'Open VT Key Drilldown',
+        },
+        {
+          title: 'Ingest queue',
+          value: queuePending > 0 ? metricFmt(queuePending) : metricFmt(stateEligible),
+          tone: queuePending > 0 && stateEligible === 0 ? 'warn' : queuePending > 0 ? 'info' : 'ok',
+          body: queuePending > 0
+            ? `${esc(metricFmt(queuePending))} PENDING ingest row(s)${queueProcessing > 0 ? ` · ${esc(metricFmt(queueProcessing))} PROCESSING` : ''}.${laneSummary !== '' ? ` ${esc(laneSummary)}.` : ''} Queue mining feeds vt_state before engine menu [1] enrichment.`
+            : `No ingest-queue backlog. vt_state eligible now: ${esc(metricFmt(stateEligible))}.${laneSummary !== '' ? ` ${esc(laneSummary)}.` : ''}`,
+          actionHref: ingestBacklogUrl,
+          actionLabel: 'Open Ingest Backlog',
         },
         {
           title: 'Scheduler pressure',
@@ -490,14 +515,19 @@ if (root && window.App) {
         renderWorkflowDebt(toRecord(data.workflow_debt) as WorkflowDebt);
 
         const workflowDebt = toRecord(data.workflow_debt);
+        const pipeline = asPipelineSnapshot(data.pipeline);
         const hasWorkflowDebt =
           asRows(workflowDebt.deprecated_live_triage_statuses).length > 0 ||
           asRows(workflowDebt.unexpected_live_triage_statuses).length > 0 ||
           asRows(workflowDebt.legacy_queue_actions_active).length > 0;
 
-        renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt as WorkflowDebt);
+        renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt as WorkflowDebt, pipeline);
 
-        if (isHold) {
+        const enginePath = pipelineNextPath(pipeline);
+        if (enginePath) {
+          const tone = String(pipeline?.recommendation?.action || '') === 'wait_vt_blocked' ? 'warn' : 'info';
+          setNextPath(`Next path: ${enginePath}`, tone);
+        } else if (isHold) {
           setNextPath('Next path: VT is blocked by a hold. Check VT Key Drilldown first, then confirm whether queue pressure or retry residue is just a downstream symptom.', 'warn');
         } else if (!schemaHeads.heads_match) {
           setNextPath('Next path: primary and Permission Intel schema heads are diverged. Treat cross-surface comparisons cautiously until that split is understood.', 'warn');

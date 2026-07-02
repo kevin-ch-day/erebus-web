@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Typecheck and build frontend
+        run: npm run check
+
+      - name: API contract tests (PHP built-in server)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-cli php-json
+          php -S 127.0.0.1:8080 -t public >/tmp/erebus-php.log 2>&1 &
+          sleep 2
+          BASE_URL=http://127.0.0.1:8080 php tests/api/pipeline_status_contract.php
+          BASE_URL=http://127.0.0.1:8080 php tests/api/pipeline_activity_contract.php

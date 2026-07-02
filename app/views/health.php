@@ -74,6 +74,16 @@ $headsMatch = (bool)($schemaHeads['heads_match'] ?? false);
 $primaryHead = (string)($schemaHeads['primary_head'] ?? '');
 $permissionIntelHead = (string)($schemaHeads['permission_intel_head'] ?? '');
 
+$pipelineSnapshot = is_array($healthLight['pipeline'] ?? null) ? $healthLight['pipeline'] : [];
+$pipelineCore = is_array($pipelineSnapshot['pipeline'] ?? null) ? $pipelineSnapshot['pipeline'] : [];
+$pipelineLanes = is_array($pipelineSnapshot['queue_lanes'] ?? null) ? $pipelineSnapshot['queue_lanes'] : [];
+$queuePendingGlobal = (int)($pipelineCore['queue_pending'] ?? 0);
+$queueProcessingGlobal = (int)($pipelineCore['queue_processing'] ?? 0);
+$stateEligibleGlobal = (int)($pipelineCore['state_eligible_now'] ?? $eligibleNow);
+$pipelineLaneSummary = db_pipeline_lane_summary($pipelineLanes);
+$pipelineEngineHint = db_pipeline_operator_hint($pipelineSnapshot);
+$ingestBacklogUrl = page_url('ingest_backlog');
+
 ?>
 
 <div class="health-page-shell">
@@ -87,7 +97,8 @@ $permissionIntelHead = (string)($schemaHeads['permission_intel_head'] ?? '');
             DB logic is UTC; timestamps are displayed in your selected timezone.
         </p>
         <div class="page-hero-actions">
-            <a class="btn btn-primary" href="<?= h(page_url('runs')) ?>">Open Run Ledger</a>
+            <a class="btn btn-primary" href="<?= h(page_url('pipeline_ops')) ?>">Pipeline Ops</a>
+            <a class="btn" href="<?= h(page_url('runs')) ?>">Open Run Ledger</a>
             <a class="btn" href="<?= h(page_url('ingest_backlog')) ?>">Open Ingest Backlog</a>
             <a class="btn" href="#vt-key-posture">Jump to Key Posture</a>
             <a class="btn" href="<?= h(page_url('permissions_overview')) ?>">Permission Overview</a>
@@ -139,6 +150,20 @@ $permissionIntelHead = (string)($schemaHeads['permission_intel_head'] ?? '');
             </div>
         </div>
         <div class="detail-card">
+            <div class="detail-card-title">Ingest queue</div>
+            <div class="detail-value"><?= h($fmtInt($queuePendingGlobal > 0 ? $queuePendingGlobal : $stateEligibleGlobal)) ?></div>
+            <div class="muted" style="margin-top:8px;">
+                <?php if ($queuePendingGlobal > 0): ?>
+                    <?= h($fmtInt($queuePendingGlobal) . ' PENDING ingest row(s)' . ($queueProcessingGlobal > 0 ? ' · ' . $fmtInt($queueProcessingGlobal) . ' PROCESSING' : '') . ($pipelineLaneSummary !== '' ? '. ' . $pipelineLaneSummary : '') . '. Queue mining feeds vt_state before engine menu [1] enrichment.') ?>
+                <?php else: ?>
+                    <?= h('No ingest-queue backlog. vt_state eligible now: ' . $fmtInt($stateEligibleGlobal) . ($pipelineLaneSummary !== '' ? '. ' . $pipelineLaneSummary : '') . '.') ?>
+                <?php endif; ?>
+            </div>
+            <div style="margin-top:10px;">
+                <a class="table-link" href="<?= h($ingestBacklogUrl) ?>">Open Ingest Backlog</a>
+            </div>
+        </div>
+        <div class="detail-card">
             <div class="detail-card-title">Scheduler pressure</div>
             <div class="detail-value"><?= h($fmtInt($pendingLike > 0 ? $pendingLike : $eligibleNow)) ?></div>
             <div class="muted" style="margin-top:8px;">
@@ -161,6 +186,32 @@ $permissionIntelHead = (string)($schemaHeads['permission_intel_head'] ?? '');
         </div>
     </div>
 </section>
+
+<?php if ($pipelineEngineHint !== ''): ?>
+<section class="section-shell">
+    <div class="section-shell-header">
+        <div>
+            <h2 class="section-shell-title">Engine recommendation</h2>
+            <p class="section-shell-copy">Headless next step from the Python mining engine. Run on the host — web stays read-only.</p>
+        </div>
+        <div class="flow-inline">
+            <a class="btn btn-primary" href="<?= h(page_url('pipeline_ops')) ?>">Open Pipeline Ops</a>
+        </div>
+    </div>
+    <?php
+    $pipelineRecAction = (string)(is_array($pipelineSnapshot['recommendation'] ?? null) ? ($pipelineSnapshot['recommendation']['action'] ?? '') : '');
+    $pipelineNoticeClass = $pipelineRecAction === 'wait_vt_blocked' ? 'warn' : 'info';
+    ?>
+    <div class="notice <?= h($pipelineNoticeClass) ?>"><?= h($pipelineEngineHint) ?></div>
+    <?php if (is_array($pipelineSnapshot['run_plan'] ?? null) && ($pipelineSnapshot['run_plan']['command'] ?? '') !== ''): ?>
+        <div class="detail-card" style="margin-top: 14px;">
+            <div class="detail-card-title">Run plan</div>
+            <div class="mono"><?= h((string)$pipelineSnapshot['run_plan']['command']) ?></div>
+            <div class="muted"><?= h((string)($pipelineSnapshot['run_plan']['reason'] ?? '')) ?></div>
+        </div>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
 
 <section class="section-shell">
     <div class="section-shell-header">

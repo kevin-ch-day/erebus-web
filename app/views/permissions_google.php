@@ -8,10 +8,6 @@ require_once __DIR__ . '/../lib/url.php';
 $title = 'Google Permissions';
 $catalogUrl = api_url('android_permission_google_catalog.php');
 $lovUrl = api_url('android_permission_lov.php');
-$pageScripts = [
-    'assets/js/permission_intel_shared.js',
-    'assets/js/pages/permissions_google_page.js',
-];
 ?>
 
 <!-- Anchors: backend decides truth; catalog pages are read-only. -->

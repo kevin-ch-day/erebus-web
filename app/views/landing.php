@@ -14,6 +14,7 @@ $landingApiUrl = api_url('landing_snapshot.php');
 
 <div id="landing-page"
      data-endpoint="<?= h($landingApiUrl) ?>"
+     data-refresh-seconds="<?= (int)DASHBOARD_REFRESH_SECONDS ?>"
      data-version="<?= h($version) ?>"
      data-timezone="<?= h($tz) ?>"></div>
 
@@ -26,7 +27,8 @@ $landingApiUrl = api_url('landing_snapshot.php');
             See live pressure first, then move straight into the queue or governed curation surface that actually needs attention.
         </p>
         <div class="landing-command-actions">
-            <a class="btn btn-primary" href="<?= h(page_url('health')) ?>">Open Pipeline Health</a>
+            <a class="btn btn-primary" href="<?= h(page_url('pipeline_ops')) ?>">Open Pipeline Ops</a>
+            <a class="btn" href="<?= h(page_url('health')) ?>">Open Pipeline Health</a>
             <a class="btn" href="<?= h(page_url('family_taxonomy_queue', ['platform' => 'android'])) ?>">Open Family Repair Queue</a>
             <a class="btn" href="<?= h(page_url('type_benchmark')) ?>">Open Type Benchmark</a>
         </div>
@@ -59,6 +61,7 @@ $landingApiUrl = api_url('landing_snapshot.php');
         <div class="landing-priority-notice surface-panel surface-panel-compact" id="landing-priority-notice">
             Loading recommendation...
         </div>
+        <div class="muted" style="margin-top:10px;font-size:12px;" id="landing-live-meta">Live refresh pending…</div>
     </aside>
 </section>
 
@@ -79,7 +82,10 @@ $landingApiUrl = api_url('landing_snapshot.php');
                     <div class="landing-chip-row" id="landing-health-chips">
                         <span class="landing-chip">Loading</span>
                     </div>
-                    <a class="btn btn-primary" href="<?= h(page_url('health')) ?>">Open Health</a>
+                    <div class="landing-actions">
+                        <a class="btn btn-primary" href="<?= h(page_url('health')) ?>">Open Health</a>
+                        <a class="btn" href="<?= h(page_url('ingest_backlog')) ?>" id="landing-health-ingest-link">Open Ingest Backlog</a>
+                    </div>
                 </div>
                 <div class="detail-card landing-lane-card">
                     <div class="landing-lane-title">Family Taxonomy Repair</div>

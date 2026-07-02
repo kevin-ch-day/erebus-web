@@ -7,7 +7,6 @@ require_once __DIR__ . '/../lib/url.php';
 
 $title = 'Schema Inventory';
 $endpoint = api_url('schema_inventory.php');
-$pageScripts = ['assets/js/pages/schema_inventory_page.js'];
 ?>
 
 <section class="page-hero">
@@ -42,7 +41,8 @@ $pageScripts = ['assets/js/pages/schema_inventory_page.js'];
 </section>
 
 <div id="schema-inventory-page"
-     data-endpoint="<?= h($endpoint) ?>"></div>
+     data-endpoint="<?= h($endpoint) ?>"
+     data-refresh-seconds="60"></div>
 
 <section class="section-shell">
     <div class="section-shell-header">

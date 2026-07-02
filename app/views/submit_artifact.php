@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../lib/app_config.php';
 require_once __DIR__ . '/../lib/url.php';
+require_once __DIR__ . '/../lib/pipeline_panel.php';
 require_once __DIR__ . '/../lib/artifact_sources.php';
 
 $title = 'Submit Artifact';
+$pipelinePanel = pipeline_panel_load(true);
 $ingestEndpoint = api_url('artifact_ingest_queue.php');
 ?>
 
 <div id="submit-artifact-page" style="display:none;"
-     data-ingest-endpoint="<?= h($ingestEndpoint) ?>"></div>
+     data-ingest-endpoint="<?= h($ingestEndpoint) ?>"
+     data-pipeline-endpoint="<?= h(api_url('pipeline_status.php')) ?>"
+     data-pipeline-prefix="submit-artifact-engine"
+     data-pipeline-live-meta="submit-artifact-engine-live-meta"
+     data-pipeline-refresh-seconds="30"></div>
 
 <section class="page-hero">
     <div class="page-hero-media">
@@ -23,10 +29,25 @@ $ingestEndpoint = api_url('artifact_ingest_queue.php');
         <div class="page-kicker">Manual queue submission</div>
         <h1 class="page-hero-title">Submit Artifact</h1>
         <p class="page-hero-lede muted">
-            Bulk addition of artifacts for ingestion into the collection.
+            Bulk addition of artifacts for ingestion into the collection. Review engine posture before expanding queue pressure.
         </p>
+        <div class="page-hero-actions">
+            <a class="btn btn-primary" href="<?= h(page_url('ingest_backlog')) ?>">Ingest Backlog</a>
+            <a class="btn" href="<?= h(page_url('pipeline_ops')) ?>">Pipeline Ops</a>
+            <a class="btn" href="<?= h(page_url('check_hash')) ?>">Check Hash</a>
+        </div>
     </div>
 </section>
+
+<?php
+render_pipeline_engine_panel($pipelinePanel, [
+    'id_prefix' => 'submit-artifact-engine',
+    'variant' => 'compact',
+    'title' => 'Queue posture before bulk submit',
+    'copy' => true,
+    'live_meta_id' => 'submit-artifact-engine-live-meta',
+]);
+?>
 
 <section class="perm-section">
     <div class="detail-card">

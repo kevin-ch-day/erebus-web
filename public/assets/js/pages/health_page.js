@@ -1,5 +1,43 @@
 (function() {
   "use strict";
+  function formatQueueLaneSummary(lanes) {
+    if (!lanes) return "";
+    const parts = [];
+    const lamdaPending = Number(lanes.lamda_pending ?? 0);
+    const reservoirPending = Number(lanes.reservoir_pending ?? 0);
+    const lamdaVtReady = lanes.lamda_vt_ready;
+    if (lamdaPending > 0) {
+      parts.push(`LAMDA ${lamdaPending.toLocaleString()} pending`);
+    }
+    if (reservoirPending > 0) {
+      parts.push(`reservoir ${reservoirPending.toLocaleString()} pending`);
+    }
+    if (lamdaVtReady !== null && lamdaVtReady !== void 0 && lamdaVtReady !== "") {
+      const ready = Number(lamdaVtReady);
+      if (Number.isFinite(ready) && ready > 0) {
+        parts.push(`${ready.toLocaleString()} LAMDA VT-ready`);
+      }
+    }
+    const topLane = String(lanes.top_workload_lane || "").trim();
+    if (topLane !== "" && parts.length === 0) {
+      parts.push(`top lane ${topLane}`);
+    }
+    return parts.join(" · ");
+  }
+  function pipelineEngineHint(snapshot) {
+    if (!snapshot) return null;
+    const runPlan = snapshot.run_plan;
+    const runCommand = String(runPlan?.command || "").trim();
+    const runSummary = String(snapshot.recommendation?.summary || "").trim();
+    if (runSummary !== "") {
+      const command = runCommand || String(snapshot.recommendation?.command || "").trim();
+      return command !== "" ? `Engine: ${runSummary} (${command})` : `Engine: ${runSummary}`;
+    }
+    return null;
+  }
+  function asPipelineSnapshot(value) {
+    return value && typeof value === "object" ? value : {};
+  }
   const root = document.getElementById("health-page");
   function asRows(value) {
     return Array.isArray(value) ? value : [];
@@ -22,9 +60,15 @@
         const num = Number(value);
         if (Number.isFinite(num)) return num.toLocaleString();
         return String(value);
-      }, renderBlockers = function(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt) {
+      }, pipelineNextPath = function(pipeline) {
+        return pipelineEngineHint(pipeline);
+      }, renderBlockers = function(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt, pipeline) {
         if (!blockersGridEl) return;
         const pendingLike = Number(metrics.retry_wait_count ?? 0) + Number(metrics.processing_now ?? 0);
+        const queuePending = Number(pipeline?.pipeline?.queue_pending ?? 0);
+        const queueProcessing = Number(pipeline?.pipeline?.queue_processing ?? 0);
+        const stateEligible = Number(pipeline?.pipeline?.state_eligible_now ?? metrics.eligible_now ?? 0);
+        const laneSummary = formatQueueLaneSummary(pipeline?.queue_lanes);
         const taxonomyRisk = familySummary?.risk_class ? String(familySummary.risk_class).toUpperCase() : "UNKNOWN";
         const taxonomyMismatch = metricFmt(familySummary?.mismatch_rows);
         const schemaSplit = schemaHeads?.heads_match ? "Aligned" : "Diverged";
@@ -39,6 +83,14 @@
             body: isHold ? `Hold until ${esc(`${formatUtc(holdUntil)} ${displayTz}`)} | reason ${esc(fmt(holdReason))}` : "No active hold is blocking enrichment right now.",
             actionHref: vtKeyDrilldownUrl,
             actionLabel: "Open VT Key Drilldown"
+          },
+          {
+            title: "Ingest queue",
+            value: queuePending > 0 ? metricFmt(queuePending) : metricFmt(stateEligible),
+            tone: queuePending > 0 && stateEligible === 0 ? "warn" : queuePending > 0 ? "info" : "ok",
+            body: queuePending > 0 ? `${esc(metricFmt(queuePending))} PENDING ingest row(s)${queueProcessing > 0 ? ` · ${esc(metricFmt(queueProcessing))} PROCESSING` : ""}.${laneSummary !== "" ? ` ${esc(laneSummary)}.` : ""} Queue mining feeds vt_state before engine menu [1] enrichment.` : `No ingest-queue backlog. vt_state eligible now: ${esc(metricFmt(stateEligible))}.${laneSummary !== "" ? ` ${esc(laneSummary)}.` : ""}`,
+            actionHref: ingestBacklogUrl,
+            actionLabel: "Open Ingest Backlog"
           },
           {
             title: "Scheduler pressure",
@@ -304,7 +356,7 @@
       const formatUtc = App.formatUtc;
       const displayTz = App.getDisplayTz();
       const ingestBacklogUrl = App.pageUrl("ingest_backlog");
-      const vtKeyDrilldownUrl = App.pageUrl("vt_key_controls");
+      const vtKeyDrilldownUrl = `${App.currentPageUrl()}#vt-key-posture`;
       const permissionsOverviewUrl = App.pageUrl("permissions_overview");
       const familyTaxonomyUrl = App.pageUrl("family_taxonomy_check");
       async function loadHealth() {
@@ -357,9 +409,14 @@
           renderRollupGuard(toRecord(data.rollup_guard));
           renderWorkflowDebt(toRecord(data.workflow_debt));
           const workflowDebt = toRecord(data.workflow_debt);
+          const pipeline = asPipelineSnapshot(data.pipeline);
           const hasWorkflowDebt = asRows(workflowDebt.deprecated_live_triage_statuses).length > 0 || asRows(workflowDebt.unexpected_live_triage_statuses).length > 0 || asRows(workflowDebt.legacy_queue_actions_active).length > 0;
-          renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt);
-          if (isHold) {
+          renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt, pipeline);
+          const enginePath = pipelineNextPath(pipeline);
+          if (enginePath) {
+            const tone = String(pipeline?.recommendation?.action || "") === "wait_vt_blocked" ? "warn" : "info";
+            setNextPath(`Next path: ${enginePath}`, tone);
+          } else if (isHold) {
             setNextPath("Next path: VT is blocked by a hold. Check VT Key Drilldown first, then confirm whether queue pressure or retry residue is just a downstream symptom.", "warn");
           } else if (!schemaHeads.heads_match) {
             setNextPath("Next path: primary and Permission Intel schema heads are diverged. Treat cross-surface comparisons cautiously until that split is understood.", "warn");

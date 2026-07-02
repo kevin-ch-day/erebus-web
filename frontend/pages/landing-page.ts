@@ -1,4 +1,10 @@
 import type { AppSurface, JsonRecord } from '../types/app-globals';
+import { asRows, toRecord } from '../shared/dom';
+import {
+  asPipelineSnapshot,
+  pipelineEngineHint,
+  pipelineLaneChips,
+} from '../shared/pipeline-posture';
 
 type LandingPair = {
   catalog_family_label?: unknown;
@@ -10,17 +16,12 @@ type LandingPair = {
 
 const root = document.getElementById('landing-page') as HTMLElement | null;
 
-function toRecord(value: unknown): JsonRecord {
-  return value && typeof value === 'object' ? (value as JsonRecord) : {};
-}
-
-function asRows<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
 if (root && window.App) {
   const App = window.App as AppSurface;
   const endpoint = root.dataset.endpoint || '';
+  const refreshSeconds = Number(root.dataset.refreshSeconds || '30') || 30;
+  const refreshMs = Math.max(10, refreshSeconds) * 1000;
+  const liveMetaEl = document.getElementById('landing-live-meta');
   const esc = App.escapeHtml;
   const fmt = App.fmt;
 
@@ -37,6 +38,7 @@ if (root && window.App) {
   const healthMetricEl = document.getElementById('landing-health-metric');
   const healthSummaryEl = document.getElementById('landing-health-summary');
   const healthChipsEl = document.getElementById('landing-health-chips');
+  const healthIngestLinkEl = document.getElementById('landing-health-ingest-link');
 
   const familyMetricEl = document.getElementById('landing-family-metric');
   const familySummaryEl = document.getElementById('landing-family-summary');
@@ -82,6 +84,12 @@ if (root && window.App) {
   }
 
   function render(snapshot: JsonRecord): void {
+    const pipeline = asPipelineSnapshot(snapshot.pipeline);
+    const pipelineRec = pipeline.recommendation || {};
+    const queuePending = Number(pipeline.pipeline?.queue_pending || 0);
+    const stateEligible = Number(pipeline.pipeline?.state_eligible_now || 0);
+    const laneChips = pipelineLaneChips(pipeline);
+
     const health = toRecord(snapshot.health);
     const family = toRecord(snapshot.family);
     const familySummary = toRecord(family.summary);
@@ -126,13 +134,28 @@ if (root && window.App) {
     if (stackGapEl) stackGapEl.textContent = fmt(cleanBenchmarkRows);
     if (stackNoteEl) stackNoteEl.textContent = `${fmt(projectionDebt)} projection debt | ${fmt(heldPersistedRows)} held persisted`;
 
-    if (healthMetricEl) healthMetricEl.textContent = holdUntil !== '' ? 'Held' : fmt(eligible);
+    if (healthMetricEl) {
+      if (holdUntil !== '') {
+        healthMetricEl.textContent = 'Held';
+      } else if (queuePending > 0 && stateEligible === 0) {
+        healthMetricEl.textContent = fmt(queuePending);
+      } else if (queuePending > 0 && queuePending >= stateEligible) {
+        healthMetricEl.textContent = fmt(queuePending);
+      } else {
+        healthMetricEl.textContent = fmt(eligible);
+      }
+    }
     if (healthSummaryEl) {
       healthSummaryEl.textContent = holdUntil !== ''
         ? 'VT is currently held. Stay on state, keys, and recent run errors before touching workflow queues.'
-        : `Eligible now ${fmt(eligible)} | processing ${fmt(processing)} | errors ${fmt(errors)}.`;
+        : laneChips.length > 0
+          ? `Eligible now ${fmt(eligible)} | ${laneChips.join(' · ')}.`
+          : `Eligible now ${fmt(eligible)} | processing ${fmt(processing)} | errors ${fmt(errors)}.`;
     }
-    renderChipRow(healthChipsEl, reasons.length ? reasons : ['No active reason breakdown']);
+    renderChipRow(healthChipsEl, [
+      ...laneChips,
+      ...reasons.length ? reasons : ['No active reason breakdown'],
+    ].filter(Boolean));
 
     if (familyMetricEl) familyMetricEl.textContent = fmt(highConflict);
     if (familySummaryEl) {
@@ -183,8 +206,13 @@ if (root && window.App) {
     }
 
     let recommendation = 'Dataset curation is stable enough to work the governed benchmark and taxonomy queues directly.';
-    if (holdUntil !== '') {
+    const engineHint = pipelineEngineHint(pipeline);
+    if (engineHint !== null) {
+      recommendation = engineHint.replace(/^Engine:\s*/, '');
+    } else if (holdUntil !== '') {
       recommendation = 'Start with VT & pipeline health. Enrichment is currently held.';
+    } else if (queuePending > 0 && eligible === 0) {
+      recommendation = `${fmt(queuePending)} ingest-queue row(s) pending with no vt_state-eligible work — open Ingest Backlog or run erebus pipeline run.`;
     } else if (errors > 0 || retryWait > 20 || staleClaims > 0) {
       recommendation = 'Start with VT & pipeline health. Scheduler residue or retries are creating operator drag.';
     } else if (mismatch > 800 || highConflict > 500) {
@@ -193,6 +221,9 @@ if (root && window.App) {
       recommendation = 'Dataset curation still has authority debt. Use Type Benchmark and Authority Consistency Debt before making stronger readiness claims.';
     }
     if (priorityNoticeEl) priorityNoticeEl.textContent = recommendation;
+    if (healthIngestLinkEl) {
+      healthIngestLinkEl.style.display = queuePending > 0 ? '' : 'none';
+    }
   }
 
   async function load(): Promise<void> {
@@ -206,7 +237,13 @@ if (root && window.App) {
       return;
     }
     render(toRecord(res.data));
+    if (liveMetaEl) {
+      liveMetaEl.textContent = `Live refresh: ${String(res.meta?.generated_at_utc || res.meta?.server_utc_now || 'ok')}`;
+    }
   }
 
   void load();
+  window.setInterval(() => {
+    void load();
+  }, refreshMs);
 }

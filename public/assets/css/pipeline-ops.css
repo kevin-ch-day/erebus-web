@@ -1,0 +1,23 @@
+.pipeline-ops-hero .pipeline-ops-notice {
+  margin-top: 12px;
+}
+
+.pipeline-ops-meta {
+  font-size: 12px;
+}
+
+.pipeline-ops-dashboard .pipeline-ops-command {
+  margin-top: 10px;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.pipeline-ops-grid .pipeline-ops-card-wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 960px) {
+  .pipeline-ops-grid .pipeline-ops-card-wide {
+    grid-column: span 1;
+  }
+}

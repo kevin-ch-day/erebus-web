@@ -1,5 +1,5 @@
 import { App } from './app-core';
-import type { JsonRecord, PermissionIntelSurface } from '../types/app-globals';
+import type { JsonRecord, PermissionIntelSurface, ReadonlyCatalogPageOptions } from '../types/app-globals';
 
 type NamespaceRule = {
   key: string;
@@ -165,6 +165,16 @@ PermissionIntel.queueStatusBadge = (statusKey: unknown): { label: string; classN
   };
 };
 
+PermissionIntel.triagePriorityBucket = (statusKey: unknown): number => {
+  const key = String(statusKey || '').toLowerCase();
+  if (!key || key === 'new' || key === 'brand_spoof' || key === 'malicious_dga') return 0;
+  if (key === 'aosp_missing' || key === 'oem_candidate' || key === 'gms_known' || key === 'malformed') return 1;
+  if (key === 'in_review') return 2;
+  if (key === 'launcher_ecosystem' || key === 'deferred') return 3;
+  if (key === 'app_defined' || key === 'resolved_aosp' || key === 'resolved_oem') return 4;
+  return 3;
+};
+
 PermissionIntel.setLov = (lov: unknown): void => {
   lovCache = lov || null;
   const classes = (lov as LovResponse | null)?.namespace_classes;
@@ -253,7 +263,7 @@ PermissionIntel.renderError = (errorEl: HTMLElement | null, title: string, detai
   errorEl.innerHTML = `<pre>${App.escapeHtml(title)}\n${App.escapeHtml(detail)}</pre>`;
 };
 
-PermissionIntel.createReadonlyCatalogPage = (options: Record<string, unknown>) => {
+PermissionIntel.createReadonlyCatalogPage = (options: ReadonlyCatalogPageOptions) => {
   const {
     endpoint,
     lovEndpoint = '',
@@ -314,7 +324,7 @@ PermissionIntel.createReadonlyCatalogPage = (options: Record<string, unknown>) =
       return;
     }
     if (typeof renderMetaText === 'function') {
-      metaEl.textContent = String(renderMetaText(meta));
+      metaEl.textContent = String(renderMetaText(meta as JsonRecord));
       return;
     }
     metaEl.textContent = String(emptyMeta);

@@ -40,7 +40,7 @@ function app_route_manifest(): array
             'section' => 'Taxonomy & Repair',
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/family_taxonomy_check.php',
-            'scripts' => ['assets/js/family_taxonomy_shared.js', 'assets/js/pages/family_taxonomy_check_page.js'],
+            'scripts' => ['assets/js/pages/family_taxonomy_check_page.js'],
         ],
         'family_taxonomy_gaps' => [
             'label' => 'Coverage & Gaps',
@@ -53,7 +53,7 @@ function app_route_manifest(): array
             'section' => 'Taxonomy & Repair',
             'nav_section' => 'malware',
             'view' => __DIR__ . '/../views/family_taxonomy_queue.php',
-            'scripts' => ['assets/js/family_taxonomy_shared.js', 'assets/js/pages/family_taxonomy_queue_page.js'],
+            'scripts' => ['assets/js/pages/family_taxonomy_queue_page.js'],
             'aliases' => ['taxonomy_repairs', 'taxonomy_repair_queue'],
         ],
         'family_taxonomy_repair_planning' => [
@@ -119,12 +119,14 @@ function app_route_manifest(): array
             'section' => 'Threat Workspace',
             'nav_section' => 'intake',
             'view' => __DIR__ . '/../views/ingest_backlog.php',
+            'scripts' => ['assets/js/pages/ingest_backlog_page.js'],
         ],
         'pending_source_mix' => [
             'label' => 'Pending Source Mix',
             'section' => 'Threat Workspace',
             'nav_section' => 'console',
             'view' => __DIR__ . '/../views/pending_source_mix.php',
+            'scripts' => ['assets/js/pages/pending_source_mix_page.js'],
         ],
         'submit_artifact' => [
             'label' => 'Submit Artifact',
@@ -138,6 +140,7 @@ function app_route_manifest(): array
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_overview.php',
+            'scripts' => ['assets/js/pages/permissions_overview_page.js'],
         ],
         'analysis_fusion' => [
             'label' => 'Analysis Fusion',
@@ -151,18 +154,21 @@ function app_route_manifest(): array
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_drift.php',
+            'scripts' => ['assets/js/pages/permissions_drift_page.js'],
         ],
         'permissions_triage' => [
             'label' => 'Permission Triage',
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_triage.php',
+            'scripts' => ['assets/js/pages/permissions_triage_page.js'],
         ],
         'permissions_queue' => [
             'label' => 'Permission Queue',
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_queue.php',
+            'scripts' => ['assets/js/pages/permissions_queue_page.js'],
             'enabled' => $phase2,
         ],
         'permissions_evidence' => [
@@ -170,12 +176,14 @@ function app_route_manifest(): array
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_evidence.php',
+            'scripts' => ['assets/js/pages/permissions_evidence_page.js'],
         ],
         'permissions_aosp' => [
             'label' => 'AOSP Permissions',
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_aosp.php',
+            'scripts' => ['assets/js/pages/permissions_aosp_page.js'],
             'nav_hidden' => true,
         ],
         'permissions_google' => [
@@ -183,6 +191,7 @@ function app_route_manifest(): array
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_google.php',
+            'scripts' => ['assets/js/pages/permissions_google_page.js'],
             'nav_hidden' => true,
         ],
         'permissions_oem_registry' => [
@@ -190,6 +199,7 @@ function app_route_manifest(): array
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_oem_registry.php',
+            'scripts' => ['assets/js/pages/permissions_oem_registry_page.js'],
             'nav_hidden' => true,
         ],
         'permissions_oem_permissions' => [
@@ -197,6 +207,7 @@ function app_route_manifest(): array
             'section' => 'Permission Intel',
             'nav_section' => 'permissions',
             'view' => __DIR__ . '/../views/permissions_oem_permissions.php',
+            'scripts' => ['assets/js/pages/permissions_oem_permissions_page.js'],
             'nav_hidden' => true,
         ],
         'permissions_review' => [
@@ -212,18 +223,26 @@ function app_route_manifest(): array
             'view' => __DIR__ . '/../views/health.php',
             'scripts' => ['assets/js/pages/health_page.js'],
         ],
+        'pipeline_ops' => [
+            'label' => 'Pipeline Ops',
+            'section' => 'VirusTotal API',
+            'nav_section' => 'pipeline',
+            'view' => __DIR__ . '/../views/pipeline_ops.php',
+            'scripts' => ['assets/js/pages/pipeline_ops_page.js'],
+        ],
         'runs' => [
             'label' => 'Run Ledger',
             'section' => 'VirusTotal API',
             'nav_section' => 'pipeline',
             'view' => __DIR__ . '/../views/runs.php',
-            'nav_hidden' => true,
+            'scripts' => ['assets/js/pages/runs_page.js'],
         ],
         'vt_snapshot_inventory' => [
             'label' => 'Snapshot Inventory',
             'section' => 'VirusTotal API',
             'nav_section' => 'pipeline',
             'view' => __DIR__ . '/../views/vt_snapshot_inventory.php',
+            'scripts' => ['assets/js/pages/vt_snapshot_inventory_page.js'],
             'nav_hidden' => true,
         ],
         'vt_confidence' => [
@@ -250,6 +269,7 @@ function app_route_manifest(): array
             'section' => 'Platform',
             'nav_section' => 'admin',
             'view' => __DIR__ . '/../views/schema_inventory.php',
+            'scripts' => ['assets/js/pages/schema_inventory_page.js'],
             'nav_hidden' => true,
         ],
         'stack_audit' => [
@@ -437,9 +457,10 @@ function app_nav_route_overrides(): array
         'permissions_oem_registry' => ['section' => 'permissions', 'group' => 'reference', 'order' => 30],
         'permissions_oem_permissions' => ['section' => 'permissions', 'group' => 'reference', 'order' => 40],
 
-        'health' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 10, 'label' => 'Pipeline Health'],
+        'health' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 20, 'label' => 'Pipeline Health'],
+        'pipeline_ops' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 10, 'label' => 'Pipeline Ops'],
         'vt_confidence' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 30],
-        'runs' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 10],
+        'runs' => ['section' => 'pipeline', 'group' => 'operate', 'order' => 20, 'label' => 'Run Ledger'],
         'vt_snapshot_inventory' => ['section' => 'pipeline', 'group' => 'detail', 'order' => 20, 'label' => 'Snapshot Inventory'],
 
         'stack_audit' => ['section' => 'admin', 'group' => 'structure', 'order' => 10],

@@ -20,8 +20,11 @@ function db_landing_snapshot(): array
     $stackCapabilities = is_array($stackAudit['capabilities'] ?? null) ? $stackAudit['capabilities'] : [];
     $stackGaps = is_array($stackAudit['gap_inventory'] ?? null) ? $stackAudit['gap_inventory'] : [];
 
+    $pipeline = db_pipeline_status(true);
+
     return [
         'generated_at_utc' => gmdate('Y-m-d H:i:s'),
+        'pipeline' => $pipeline,
         'health' => [
             'eligible_now' => (int)($metrics['eligible_now'] ?? 0),
             'processing_now' => (int)($metrics['processing_now'] ?? 0),

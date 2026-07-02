@@ -469,3 +469,24 @@ function db_ingest_backlog_preview_rows(int $limit = 10, ?string $sourceFilter =
         $params
     );
 }
+
+function db_ingest_backlog_snapshot(?string $sourceFilter = null, ?string $laneFilter = null): array
+{
+    $source = $sourceFilter !== null && trim($sourceFilter) !== '' ? trim($sourceFilter) : null;
+    $lane = $laneFilter !== null && trim($laneFilter) !== '' ? trim($laneFilter) : null;
+    $pipeline = db_pipeline_status(true);
+
+    return [
+        'generated_at_utc' => gmdate('Y-m-d\TH:i:s\Z'),
+        'filters' => [
+            'source' => $source,
+            'lane' => $lane,
+        ],
+        'totals' => db_ingest_backlog_totals($source, $lane),
+        'operator' => db_ingest_operator_snapshot($source, $lane),
+        'cleanup' => db_ingest_cleanup_pressure($source, $lane),
+        'lanes' => db_ingest_backlog_lane_summary($source, $lane),
+        'pipeline' => $pipeline,
+        'recommended_lane' => db_pipeline_recommended_lane($pipeline),
+    ];
+}

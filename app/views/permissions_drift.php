@@ -11,10 +11,6 @@ $title = 'Permission Drift';
 $queryLimit = max(10, min((int)($_GET['namespace_limit'] ?? 50), 100));
 $intelUrl = api_url('android_permission_intelligence.php');
 $lovUrl = api_url('android_permission_lov.php');
-$pageScripts = [
-    'assets/js/permission_intel_shared.js',
-    'assets/js/pages/permissions_drift_page.js',
-];
 ?>
 
 <!-- Anchors: backend decides truth; drift is diagnostic only. -->
@@ -25,7 +21,9 @@ $pageScripts = [
 <div id="perm-drift-page" style="display:none;"
      data-intel-endpoint="<?= h($intelUrl) ?>"
      data-lov-endpoint="<?= h($lovUrl) ?>"
-     data-namespace-limit="<?= (int)$queryLimit ?>"></div>
+     data-namespace-limit="<?= (int)$queryLimit ?>"
+     data-refresh-seconds="45"></div>
+<p class="muted" style="font-size:12px;" id="perm-drift-live-meta">Live refresh pending…</p>
 
 <section class="perm-section">
     <div class="detail-card">

@@ -8,7 +8,6 @@ require_once __DIR__ . '/../lib/time.php';
 
 $title = 'Permission Queue';
 $queueUrl = api_url('fallback_permission_queue.php');
-$pageScripts = ['assets/js/readonly_table.js', 'assets/js/pages/permissions_queue_page.js'];
 
 $querySearch = trim((string)($_GET['search'] ?? ''));
 $queryStatus = trim((string)($_GET['status'] ?? ''));

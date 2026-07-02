@@ -6,7 +6,6 @@ require_once __DIR__ . '/../lib/url.php';
 
 $title = 'Snapshot Inventory';
 $inventoryApiUrl = api_url('vt_snapshot_inventory.php');
-$pageScripts = ['assets/js/pages/vt_snapshot_inventory_page.js'];
 ?>
 
 <section class="page-hero">
@@ -23,6 +22,7 @@ $pageScripts = ['assets/js/pages/vt_snapshot_inventory_page.js'];
             <a class="btn" href="<?= h(page_url('runs')) ?>">Run Ledger</a>
             <button class="btn btn-muted" id="vt-inv-refresh">Refresh</button>
         </div>
+        <div class="muted" style="margin-top:10px;font-size:12px;" id="vt-inv-live-meta">Live refresh pending…</div>
     </div>
     <aside class="page-hero-side">
         <h2 class="page-hero-side-title">Read model</h2>

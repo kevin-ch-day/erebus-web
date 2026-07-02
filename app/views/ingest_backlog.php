@@ -4,6 +4,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/../lib/app_config.php';
 require_once __DIR__ . '/../lib/url.php';
 require_once __DIR__ . '/../lib/time.php';
+require_once __DIR__ . '/../lib/pipeline_panel.php';
+require_once __DIR__ . '/../database/db_func.php';
 require_once __DIR__ . '/../database/services/intake_service.php';
 
 $title = 'Ingest Backlog';
@@ -22,6 +24,8 @@ $sources = [];
 $operator = [];
 $cleanup = [];
 $previewRows = [];
+$pipelinePanel = pipeline_panel_load(true);
+$engineRecommendedLane = $pipelinePanel['recommended_lane'];
 
 try {
     $totals = db_ingest_backlog_totals($sourceFilter !== '' ? $sourceFilter : null, $laneFilter !== '' ? $laneFilter : null);
@@ -50,7 +54,24 @@ foreach ($sources as $sourceRow) {
     }
     $otherSources[] = $sourceRow;
 }
+
+$snapshotQuery = [];
+if ($sourceFilter !== '') {
+    $snapshotQuery['source'] = $sourceFilter;
+}
+if ($laneFilter !== '') {
+    $snapshotQuery['lane'] = $laneFilter;
+}
+$snapshotApiUrl = api_url('ingest_backlog_snapshot.php');
+if ($snapshotQuery !== []) {
+    $snapshotApiUrl .= '?' . http_build_query($snapshotQuery);
+}
 ?>
+
+<div id="ingest-backlog-page"
+     style="display:none;"
+     data-endpoint="<?= h($snapshotApiUrl) ?>"
+     data-refresh-seconds="20"></div>
 
 <section class="page-hero">
     <div class="page-hero-body">
@@ -62,7 +83,9 @@ foreach ($sources as $sourceRow) {
             pending age, and source mix on one screen.
         </p>
         <div class="page-hero-actions">
-            <a class="btn btn-primary" href="<?= h(page_url('check_hash')) ?>">Check Hash</a>
+            <a class="btn btn-primary" href="<?= h(page_url('pipeline_ops')) ?>">Pipeline Ops</a>
+            <a class="btn" href="<?= h(page_url('health')) ?>">Pipeline Health</a>
+            <a class="btn" href="<?= h(page_url('check_hash')) ?>">Check Hash</a>
             <a class="btn" href="<?= h(page_url('submit_artifact')) ?>">Submit Artifact</a>
         </div>
     </div>
@@ -71,6 +94,15 @@ foreach ($sources as $sourceRow) {
 <?php if ($loadError !== null): ?>
     <div class="notice error" style="margin-bottom: 16px;"><?= h($loadError) ?></div>
 <?php endif; ?>
+
+<?php
+render_pipeline_engine_panel($pipelinePanel, [
+    'id_prefix' => 'ingest-engine',
+    'variant' => 'full',
+    'slice_note' => $hasSlice ? 'Slice filters below are local; this recommendation is for the full queue.' : null,
+    'live_meta_id' => 'ingest-backlog-live-meta',
+]);
+?>
 
 <section class="section-shell">
     <div class="section-shell-header">
@@ -147,23 +179,23 @@ foreach ($sources as $sourceRow) {
     <div class="health-tiles">
         <div class="health-tile">
             <div class="health-tile-label">Pending</div>
-            <div class="health-tile-value"><?= number_format((int)($totals['pending_rows'] ?? 0)) ?></div>
+            <div class="health-tile-value" id="ingest-tile-pending"><?= number_format((int)($totals['pending_rows'] ?? 0)) ?></div>
         </div>
         <div class="health-tile">
             <div class="health-tile-label">Processing</div>
-            <div class="health-tile-value"><?= number_format((int)($totals['processing_rows'] ?? 0)) ?></div>
+            <div class="health-tile-value" id="ingest-tile-processing"><?= number_format((int)($totals['processing_rows'] ?? 0)) ?></div>
         </div>
         <div class="health-tile">
             <div class="health-tile-label">Failed</div>
-            <div class="health-tile-value"><?= number_format((int)($totals['failed_rows'] ?? 0)) ?></div>
+            <div class="health-tile-value" id="ingest-tile-failed"><?= number_format((int)($totals['failed_rows'] ?? 0)) ?></div>
         </div>
         <div class="health-tile">
             <div class="health-tile-label">Queue rows</div>
-            <div class="health-tile-value"><?= number_format((int)($totals['queue_rows'] ?? 0)) ?></div>
+            <div class="health-tile-value" id="ingest-tile-queue-rows"><?= number_format((int)($totals['queue_rows'] ?? 0)) ?></div>
         </div>
         <div class="health-tile">
             <div class="health-tile-label">Active lanes</div>
-            <div class="health-tile-value"><?= number_format((int)($totals['lane_count'] ?? 0)) ?></div>
+            <div class="health-tile-value" id="ingest-tile-lanes"><?= number_format((int)($totals['lane_count'] ?? 0)) ?></div>
         </div>
     </div>
     <div class="detail-grid" style="margin-top: 14px;">
@@ -292,8 +324,13 @@ foreach ($sources as $sourceRow) {
                         if ((int)($lane['windows_pe_hint_rows'] ?? 0) > 0) {
                             $hints[] = 'pe=' . number_format((int)$lane['windows_pe_hint_rows']);
                         }
+                        $laneKey = (string)($lane['workload_lane'] ?? '');
+                        $isEnginePick = $engineRecommendedLane !== null && $laneKey === $engineRecommendedLane;
+                        if ($isEnginePick) {
+                            $hints[] = 'engine pick';
+                        }
                         ?>
-                        <tr>
+                        <tr<?= $isEnginePick ? ' style="background: color-mix(in srgb, var(--accent, #3b82f6) 8%, transparent);"' : '' ?>>
                             <td>
                                 <strong><?= h((string)($lane['display_name'] ?? '')) ?></strong>
                                 <div class="muted mono"><?= h((string)($lane['workload_lane'] ?? '')) ?></div>

@@ -11,8 +11,10 @@ $vtStatusUrl = api_url('fallback_vt_status.php');
 $vtOpsSummaryUrl = api_url('vt_ops_summary.php');
 $queueUrl = api_url('fallback_permission_queue.php');
 $healthUrl = api_url('health.php');
+$pipelineStatusUrl = api_url('pipeline_status.php');
+$pipelineActivityUrl = api_url('pipeline_activity.php');
 $apiBase = app_url('api.php');
-$pageScripts = ['assets/js/readonly_table.js', 'assets/js/diagnostics_panel.js', 'assets/js/pages/admin_diagnostics_page.js'];
+$pageScripts = ['assets/js/pages/admin_diagnostics_page.js'];
 ?>
 
 <h1>Admin Diagnostics</h1>
@@ -31,6 +33,8 @@ $pageScripts = ['assets/js/readonly_table.js', 'assets/js/diagnostics_panel.js',
      data-vt-ops-summary="<?= h($vtOpsSummaryUrl) ?>"
      data-permission-queue="<?= h($queueUrl) ?>"
      data-pipeline-health="<?= h($healthUrl) ?>"
+     data-pipeline-status="<?= h($pipelineStatusUrl) ?>"
+     data-pipeline-activity="<?= h($pipelineActivityUrl) ?>"
      data-api-base="<?= h($apiBase) ?>"
      data-app-version="<?= h(APP_VERSION) ?>"
      data-app-sha="<?= h(APP_GIT_SHA) ?>"

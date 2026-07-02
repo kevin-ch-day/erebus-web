@@ -36,6 +36,12 @@ function db_run_ledger_list(array $filters): array
         $params['q_like'] = '%' . $filters['q'] . '%';
     }
 
+    $stoppedReason = trim((string)($filters['stopped_reason'] ?? ''));
+    if ($stoppedReason !== '') {
+        $where[] = 'stopped_reason = :stopped_reason';
+        $params['stopped_reason'] = $stoppedReason;
+    }
+
     $sql = sql_run_ledger_list_base();
     if ($where) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -141,4 +147,30 @@ function db_runs_schema_head_for_catalog(string $catalog): ?string
         return null;
     }
     return (string)$row['version'];
+}
+
+function db_run_ledger_stopped_reasons(): array
+{
+    $rows = db_all(
+        "
+        SELECT DISTINCT stopped_reason
+        FROM virustotal_run_ledger
+        WHERE stopped_reason IS NOT NULL
+          AND TRIM(stopped_reason) <> ''
+        ORDER BY stopped_reason ASC
+        "
+    );
+
+    $reasons = [];
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $value = trim((string)($row['stopped_reason'] ?? ''));
+        if ($value !== '') {
+            $reasons[] = $value;
+        }
+    }
+
+    return $reasons;
 }

@@ -145,6 +145,7 @@ function db_health(bool $includeDiagnostics = false): array
             'retry_wait_count' => (int)($retryWait['retry_wait_count'] ?? 0),
             'reason_breakdown' => $reasons,
         ],
+        'pipeline' => db_pipeline_status(true),
     ];
 
     $requestCache[$cacheKey] = $payload;

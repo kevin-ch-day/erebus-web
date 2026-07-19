@@ -455,6 +455,9 @@ if (root && window.App) {
       try {
         const url = new URL(endpoint, window.location.origin);
         url.searchParams.set('limit', String(limit));
+        const includeRowsRaw = String(pageRoot.dataset.includeRows || '0').toLowerCase();
+        const includeRows = ['1', 'true', 'yes', 'y'].includes(includeRowsRaw);
+        url.searchParams.set('include_rows', includeRows ? '1' : '0');
         if (alignment) url.searchParams.set('alignment', alignment);
         if (platform) url.searchParams.set('platform', platform);
         if (pattern) url.searchParams.set('pattern', pattern);

@@ -234,11 +234,24 @@ if (root && window.App) {
     const res = await App.fetchPayload(endpoint);
     if (!res.ok) {
       renderUnavailable();
+      if (liveMetaEl) {
+        const detail = res.status
+          ? `HTTP ${res.status}${res.error ? ` · ${String(res.error)}` : ''}`
+          : String(res.error || 'network error');
+        liveMetaEl.textContent = `Live refresh failed (${detail}${res.elapsedMs ? `, ${res.elapsedMs}ms` : ''})`;
+      }
       return;
     }
-    render(toRecord(res.data));
+    const snapshot = toRecord(res.data);
+    render(snapshot);
     if (liveMetaEl) {
-      liveMetaEl.textContent = `Live refresh: ${String(res.meta?.generated_at_utc || res.meta?.server_utc_now || 'ok')}`;
+      const degraded = Array.isArray(snapshot.degraded)
+        ? snapshot.degraded.map((item) => String(item))
+        : [];
+      const stamp = String(res.meta?.generated_at_utc || res.meta?.server_utc_now || 'ok');
+      liveMetaEl.textContent = degraded.length
+        ? `Live refresh: ${stamp} · partial (${degraded.join(', ')} cache warming)`
+        : `Live refresh: ${stamp}`;
     }
   }
 

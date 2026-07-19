@@ -10,12 +10,18 @@ function app_transient_cache_candidate_dirs(): array
         $dirs[] = $envDir;
     }
 
-    $tmpDir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'erebus_web_cache';
-    $dirs[] = $tmpDir;
+    // Shared app storage first. php-fpm runs with PrivateTmp=yes, so /tmp is not
+    // shared with CLI warmers. logs/cache is often httpd_log_t and not writable.
+    if (defined('APP_ROOT')) {
+        $dirs[] = rtrim((string)APP_ROOT, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache';
+    }
 
     if (defined('LOG_DIR')) {
         $dirs[] = rtrim((string)LOG_DIR, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'cache';
     }
+
+    $tmpDir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'erebus_web_cache';
+    $dirs[] = $tmpDir;
 
     return array_values(array_unique($dirs));
 }
@@ -64,7 +70,15 @@ function app_transient_cache_dir(): string
         }
     }
 
-    $resolved = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'erebus_web_cache';
+    // Last resort: still require a writable probe so php-fpm and CLI do not
+    // silently diverge onto an unreadable/unwritable path.
+    $fallback = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'erebus_web_cache';
+    if (app_transient_cache_probe_dir($fallback)) {
+        $resolved = $fallback;
+        return $resolved;
+    }
+
+    $resolved = $fallback;
     return $resolved;
 }
 

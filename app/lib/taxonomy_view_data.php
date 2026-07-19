@@ -58,44 +58,146 @@ function taxonomy_view_fetch(int $limit = 25, array $filters = []): array
     }
     $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
     if (is_array($staleCached)) {
-        if ($forceRefresh) {
-            taxonomy_view_schedule_refresh_once($namespace . ':' . $cacheKey, static function () use ($limit, $filters, $namespace, $cacheKey): void {
-                $includeRows = !array_key_exists('include_rows', $filters) || (bool)$filters['include_rows'];
-                $payload = db_family_taxonomy_check(
-                    limit: $limit,
-                    alignment: (string)($filters['alignment'] ?? ''),
-                    platform: (string)($filters['platform'] ?? ''),
-                    query: (string)($filters['query'] ?? $filters['q'] ?? ''),
-                    pattern: (string)($filters['pattern'] ?? ''),
-                    pairCatalog: (string)($filters['pair_catalog'] ?? ''),
-                    pairSignal: (string)($filters['pair_signal'] ?? ''),
-                    fixAction: (string)($filters['fix_action'] ?? ''),
-                    targetFamily: (string)($filters['target_family'] ?? ''),
-                    decisionMode: (string)($filters['decision_mode'] ?? ''),
-                    includeRows: $includeRows,
-                );
-                app_transient_cache_write($namespace, $cacheKey, $payload);
-            });
-        }
         $cache[$cacheKey] = $staleCached;
         return $cache[$cacheKey];
     }
 
-    $cache[$cacheKey] = db_family_taxonomy_check(
-        limit: $limit,
-        alignment: (string)($filters['alignment'] ?? ''),
+    // Cold full-catalog taxonomy checks routinely exceed php-fpm memory (128M)
+    // and the reverse-proxy timeout. Never compute them inline for web requests.
+    if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+        $cache[$cacheKey] = db_family_taxonomy_check(
+            limit: $limit,
+            alignment: (string)($filters['alignment'] ?? ''),
+            platform: (string)($filters['platform'] ?? ''),
+            query: (string)($filters['query'] ?? $filters['q'] ?? ''),
+            pattern: (string)($filters['pattern'] ?? ''),
+            pairCatalog: (string)($filters['pair_catalog'] ?? ''),
+            pairSignal: (string)($filters['pair_signal'] ?? ''),
+            fixAction: (string)($filters['fix_action'] ?? ''),
+            targetFamily: (string)($filters['target_family'] ?? ''),
+            decisionMode: (string)($filters['decision_mode'] ?? ''),
+            includeRows: $includeRows,
+        );
+        app_transient_cache_write($namespace, $cacheKey, $cache[$cacheKey]);
+        return $cache[$cacheKey];
+    }
+
+    $cache[$cacheKey] = taxonomy_view_lightweight_payload(
         platform: (string)($filters['platform'] ?? ''),
-        query: (string)($filters['query'] ?? $filters['q'] ?? ''),
-        pattern: (string)($filters['pattern'] ?? ''),
-        pairCatalog: (string)($filters['pair_catalog'] ?? ''),
-        pairSignal: (string)($filters['pair_signal'] ?? ''),
-        fixAction: (string)($filters['fix_action'] ?? ''),
-        targetFamily: (string)($filters['target_family'] ?? ''),
-        decisionMode: (string)($filters['decision_mode'] ?? ''),
+        limit: $limit,
         includeRows: $includeRows,
     );
-    app_transient_cache_write($namespace, $cacheKey, $cache[$cacheKey]);
     return $cache[$cacheKey];
+}
+
+/**
+ * Fast fallback when taxonomy check cache is cold.
+ * Built from the cached family scorecard (or empty zeros).
+ */
+function taxonomy_view_lightweight_payload(
+    string $platform = '',
+    int $limit = 25,
+    bool $includeRows = false,
+): array {
+    $scorecard = function_exists('db_family_taxonomy_scorecard_cached_only')
+        ? db_family_taxonomy_scorecard_cached_only()
+        : null;
+    if (!is_array($scorecard)) {
+        $scorecard = [];
+    }
+
+    $summary = [];
+    foreach (
+        [
+            'aligned' => 'aligned_rows',
+            'mismatch' => 'mismatch_rows',
+            'signal_only' => 'signal_only_rows',
+            'catalog_only' => 'catalog_only_rows',
+            'unlabeled' => 'unlabeled_rows',
+        ] as $status => $field
+    ) {
+        $count = (int)($scorecard[$field] ?? 0);
+        if ($count <= 0 && empty($scorecard)) {
+            continue;
+        }
+        $summary[] = [
+            'alignment_status' => $status,
+            'row_count' => $count,
+            'generic_label_count' => $status === 'aligned' ? 0 : (int)($scorecard['generic_label_rows'] ?? 0),
+        ];
+    }
+
+    $mismatchPairs = function_exists('db_family_taxonomy_top_mismatch_pairs_cached')
+        ? db_family_taxonomy_top_mismatch_pairs_cached(6, false)
+        : [];
+
+    return [
+        'data' => [
+            'summary' => $summary,
+            'authority_mismatch_summary' => [],
+            'rows' => [],
+            'mismatch_pairs' => $mismatchPairs,
+            'issue_inventory' => [
+                'issue_kind_counts' => new stdClass(),
+            ],
+            'fix_action_inventory' => new stdClass(),
+            'decision_inventory' => [
+                'total_rows' => (int)($scorecard['total_rows'] ?? 0),
+                'decision_mode_counts' => new stdClass(),
+                'decision_priority_counts' => new stdClass(),
+            ],
+            'ask_why_inventory' => [
+                'total_rows' => 0,
+                'issue_kind_counts' => new stdClass(),
+                'platform_counts' => new stdClass(),
+                'issue_platform_counts' => new stdClass(),
+            ],
+            'platform_inventory' => [
+                'total_rows' => (int)($scorecard['total_rows'] ?? 0),
+                'platform_counts' => new stdClass(),
+                'platform_alignment_counts' => new stdClass(),
+                'platform_decision_counts' => new stdClass(),
+                'platform_held_mismatch_counts' => new stdClass(),
+                'platform_repair_now_counts' => new stdClass(),
+            ],
+            'governance_inventory' => [
+                'untargeted_top_signal_labels' => [],
+            ],
+            'apply_plan' => [],
+            'repair_opportunities' => [],
+            'queue_presets' => [],
+            'remediation_summary' => [
+                'priority_lanes' => [],
+                'math' => [
+                    'mismatch_rows' => (int)($scorecard['mismatch_rows'] ?? 0),
+                    'high_conflict_rows' => (int)($scorecard['high_conflict_rows'] ?? 0),
+                    'risk_class' => (string)($scorecard['risk_class'] ?? 'unknown'),
+                ],
+                'mismatch_pair_classes' => new stdClass(),
+                'row_pattern_summary' => new stdClass(),
+                'top_mismatch_pairs' => $mismatchPairs,
+            ],
+            'cache_state' => empty($scorecard) ? 'missing' : 'lightweight',
+        ],
+        'meta' => [
+            'schema_available' => !empty($scorecard['available']),
+            'primary_database' => db_primary_catalog_name(),
+            'limit' => $limit,
+            'alignment' => '',
+            'platform' => $platform,
+            'query' => '',
+            'pattern' => '',
+            'pair_catalog' => '',
+            'pair_signal' => '',
+            'fix_action' => '',
+            'target_family' => '',
+            'decision_mode' => '',
+            'include_rows' => $includeRows,
+            'generated_at_utc' => gmdate('Y-m-d H:i:s'),
+            'cache_state' => empty($scorecard) ? 'missing' : 'lightweight',
+            'warm_hint' => 'php bin/warm_landing_cache.php',
+        ],
+    ];
 }
 
 function taxonomy_view_summary_by_alignment(array $payload): array
@@ -142,18 +244,29 @@ function taxonomy_view_catalog_only_authority_summary(string $platform = 'androi
     }
     $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
     if (is_array($staleCached)) {
-        if ($forceRefresh) {
-            taxonomy_view_schedule_refresh_once($namespace . ':' . $cacheKey, static function () use ($platform, $namespace, $cacheKey): void {
-                $payload = db_family_taxonomy_catalog_only_authority_summary($platform);
-                app_transient_cache_write($namespace, $cacheKey, $payload);
-            });
-        }
         $cache[$cacheKey] = $staleCached;
         return $cache[$cacheKey];
     }
 
-    $cache[$cacheKey] = db_family_taxonomy_catalog_only_authority_summary($platform);
-    app_transient_cache_write($namespace, $cacheKey, $cache[$cacheKey]);
+    if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+        $cache[$cacheKey] = db_family_taxonomy_catalog_only_authority_summary($platform);
+        app_transient_cache_write($namespace, $cacheKey, $cache[$cacheKey]);
+        return $cache[$cacheKey];
+    }
+
+    $cache[$cacheKey] = [
+        'total_rows' => 0,
+        'authority_family_typed_rows' => 0,
+        'resolved_unknown_rows' => 0,
+        'generic_label_candidate_rows' => 0,
+        'residual_review_rows' => 0,
+        'missing_signal_row_rows' => 0,
+        'coarse_vt_only_rows' => 0,
+        'empty_signal_surface_rows' => 0,
+        'source_batch_backed_rows' => 0,
+        'authority_coverage_pct' => 0.0,
+        'cache_state' => 'missing',
+    ];
     return $cache[$cacheKey];
 }
 
@@ -179,18 +292,17 @@ function taxonomy_view_catalog_only_anchor_families(string $platform = 'android'
     }
     $staleCached = app_transient_cache_read_stale($namespace, $cacheKey);
     if (is_array($staleCached)) {
-        if ($forceRefresh) {
-            taxonomy_view_schedule_refresh_once($namespace . ':' . $cacheKey, static function () use ($platform, $limit, $namespace, $cacheKey): void {
-                $payload = db_family_taxonomy_catalog_only_anchor_families($platform, $limit);
-                app_transient_cache_write($namespace, $cacheKey, $payload);
-            });
-        }
         $cache[$cacheKey] = $staleCached;
         return $cache[$cacheKey];
     }
 
-    $cache[$cacheKey] = db_family_taxonomy_catalog_only_anchor_families($platform, $limit);
-    app_transient_cache_write($namespace, $cacheKey, $cache[$cacheKey]);
+    if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+        $cache[$cacheKey] = db_family_taxonomy_catalog_only_anchor_families($platform, $limit);
+        app_transient_cache_write($namespace, $cacheKey, $cache[$cacheKey]);
+        return $cache[$cacheKey];
+    }
+
+    $cache[$cacheKey] = [];
     return $cache[$cacheKey];
 }
 

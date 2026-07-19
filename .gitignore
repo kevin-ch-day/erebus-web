@@ -15,6 +15,8 @@ build/
 logs/*.log
 logs/*.pid
 logs/cache/*.json
+storage/cache/*.json
+!storage/cache/.gitkeep
 .phpunit.result.cache
 .phpunit.cache/
 .php-cs-fixer.cache

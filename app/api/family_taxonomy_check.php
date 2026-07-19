@@ -76,8 +76,42 @@ try {
             return;
         }
     }
-    $payload = db_family_taxonomy_check($limit, $alignment, $platform, $query, $pattern, $pairCatalog, $pairSignal, $fixAction, $targetFamily, $decisionMode, $includeRows);
-    family_taxonomy_check_cache_write($cacheKey, $payload);
+
+    // Cold taxonomy checks exceed php-fpm memory/time budgets. Only CLI warmers
+    // should compute; web requests fall back to a lightweight scorecard payload.
+    if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+        $payload = db_family_taxonomy_check(
+            $limit,
+            $alignment,
+            $platform,
+            $query,
+            $pattern,
+            $pairCatalog,
+            $pairSignal,
+            $fixAction,
+            $targetFamily,
+            $decisionMode,
+            $includeRows
+        );
+        family_taxonomy_check_cache_write($cacheKey, $payload);
+        api_ok($payload['data'], $payload['meta']);
+        return;
+    }
+
+    require_once __DIR__ . '/../lib/taxonomy_view_data.php';
+    $payload = taxonomy_view_lightweight_payload(
+        platform: $platform,
+        limit: $limit,
+        includeRows: $includeRows,
+    );
+    $payload['meta']['alignment'] = $alignment;
+    $payload['meta']['query'] = $query;
+    $payload['meta']['pattern'] = $pattern;
+    $payload['meta']['pair_catalog'] = $pairCatalog;
+    $payload['meta']['pair_signal'] = $pairSignal;
+    $payload['meta']['fix_action'] = $fixAction;
+    $payload['meta']['target_family'] = $targetFamily;
+    $payload['meta']['decision_mode'] = $decisionMode;
     api_ok($payload['data'], $payload['meta']);
 } catch (Throwable $e) {
     api_error('Failed to load family taxonomy check.', 500, 'ERR_FAMILY_TAXONOMY_CHECK', [], $e);

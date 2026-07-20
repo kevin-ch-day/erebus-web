@@ -1,6 +1,12 @@
 <?php
 // app/database/db_config.php
 // Load DB credentials from environment first, with explicit primary/PI catalog support.
+//
+// Erebus Engine owns the canonical shared names (EREBUS_DB_* and
+// EREBUS_PERMISSION_INTEL_DB_*). The shorter DB_* and
+// PERMISSION_INTEL_DB_* names remain supported for older Web-only installs,
+// but deliberately have lower precedence. This prevents a receiver host from
+// silently pointing the CLI and Web console at different catalogs.
 
 declare(strict_types=1);
 
@@ -137,15 +143,26 @@ function db_env_files_loaded(): array
 function db_config_diagnostics(): array
 {
     $envKeys = [
+        'EREBUS_DB_HOST',
+        'EREBUS_DB_PORT',
+        'EREBUS_DB_NAME',
+        'EREBUS_DB_USER',
+        'EREBUS_DB_PASSWORD',
+        'EREBUS_DB_SOCKET',
         'DB_HOST',
         'DB_PORT',
         'DB_NAME',
         'DB_USER',
         'DB_PASS',
         'DB_SOCKET',
-        'PERMISSION_INTEL_DB_NAME',
         'EREBUS_PERMISSION_INTEL_DB_NAME',
         'ANDROID_PERMISSION_INTEL_DB_NAME',
+        'PERMISSION_INTEL_DB_NAME',
+        'EREBUS_PERMISSION_INTEL_DB_HOST',
+        'EREBUS_PERMISSION_INTEL_DB_PORT',
+        'EREBUS_PERMISSION_INTEL_DB_USER',
+        'EREBUS_PERMISSION_INTEL_DB_PASSWORD',
+        'EREBUS_PERMISSION_INTEL_DB_SOCKET',
         'PERMISSION_INTEL_DB_HOST',
         'PERMISSION_INTEL_DB_PORT',
         'PERMISSION_INTEL_DB_USER',
@@ -196,25 +213,25 @@ function env_first_or_mysql_default(array $keys, string $default, ?string $mysql
     return $default;
 }
 
-define('DB_HOST', env_first_or_mysql_default(['DB_HOST', 'EREBUS_DB_HOST'], '127.0.0.1', 'host'));
-define('DB_PORT', (int)env_first_or_mysql_default(['DB_PORT', 'EREBUS_DB_PORT'], '3306', 'port'));
-define('DB_NAME', env_first_or_default(['DB_NAME', 'EREBUS_DB_NAME'], 'erebus_threat_intel_prod'));
-define('DB_USER', env_first_or_mysql_default(['DB_USER', 'EREBUS_DB_USER'], 'root', 'user'));
-define('DB_PASS', env_first_or_mysql_default(['DB_PASS', 'EREBUS_DB_PASSWORD'], '', 'password'));
-define('DB_SOCKET', env_first_or_mysql_default(['DB_SOCKET', 'EREBUS_DB_SOCKET', 'MYSQL_UNIX_PORT'], '', 'socket'));
+define('DB_HOST', env_first_or_mysql_default(['EREBUS_DB_HOST', 'DB_HOST'], '127.0.0.1', 'host'));
+define('DB_PORT', (int)env_first_or_mysql_default(['EREBUS_DB_PORT', 'DB_PORT'], '3306', 'port'));
+define('DB_NAME', env_first_or_default(['EREBUS_DB_NAME', 'DB_NAME'], 'erebus_threat_intel_prod'));
+define('DB_USER', env_first_or_mysql_default(['EREBUS_DB_USER', 'DB_USER'], 'root', 'user'));
+define('DB_PASS', env_first_or_mysql_default(['EREBUS_DB_PASSWORD', 'DB_PASS'], '', 'password'));
+define('DB_SOCKET', env_first_or_mysql_default(['EREBUS_DB_SOCKET', 'DB_SOCKET', 'MYSQL_UNIX_PORT'], '', 'socket'));
 define(
     'PERMISSION_INTEL_DB_NAME_RAW',
     env_first_or_default(
-        ['PERMISSION_INTEL_DB_NAME', 'EREBUS_PERMISSION_INTEL_DB_NAME', 'ANDROID_PERMISSION_INTEL_DB_NAME'],
+        ['EREBUS_PERMISSION_INTEL_DB_NAME', 'ANDROID_PERMISSION_INTEL_DB_NAME', 'PERMISSION_INTEL_DB_NAME'],
         ''
     )
 );
 define('PERMISSION_INTEL_DB_NAME', PERMISSION_INTEL_DB_NAME_RAW !== '' ? PERMISSION_INTEL_DB_NAME_RAW : DB_NAME);
-define('PERMISSION_INTEL_DB_HOST', env_first_or_default(['PERMISSION_INTEL_DB_HOST', 'EREBUS_PERMISSION_INTEL_DB_HOST'], DB_HOST));
-define('PERMISSION_INTEL_DB_PORT', (int)env_first_or_default(['PERMISSION_INTEL_DB_PORT', 'EREBUS_PERMISSION_INTEL_DB_PORT'], (string)DB_PORT));
-define('PERMISSION_INTEL_DB_USER', env_first_or_default(['PERMISSION_INTEL_DB_USER', 'EREBUS_PERMISSION_INTEL_DB_USER'], DB_USER));
-define('PERMISSION_INTEL_DB_PASS', env_first_or_default(['PERMISSION_INTEL_DB_PASS', 'EREBUS_PERMISSION_INTEL_DB_PASSWORD'], DB_PASS));
-define('PERMISSION_INTEL_DB_SOCKET', env_first_or_default(['PERMISSION_INTEL_DB_SOCKET', 'EREBUS_PERMISSION_INTEL_DB_SOCKET'], DB_SOCKET));
+define('PERMISSION_INTEL_DB_HOST', env_first_or_default(['EREBUS_PERMISSION_INTEL_DB_HOST', 'PERMISSION_INTEL_DB_HOST'], DB_HOST));
+define('PERMISSION_INTEL_DB_PORT', (int)env_first_or_default(['EREBUS_PERMISSION_INTEL_DB_PORT', 'PERMISSION_INTEL_DB_PORT'], (string)DB_PORT));
+define('PERMISSION_INTEL_DB_USER', env_first_or_default(['EREBUS_PERMISSION_INTEL_DB_USER', 'PERMISSION_INTEL_DB_USER'], DB_USER));
+define('PERMISSION_INTEL_DB_PASS', env_first_or_default(['EREBUS_PERMISSION_INTEL_DB_PASSWORD', 'PERMISSION_INTEL_DB_PASS'], DB_PASS));
+define('PERMISSION_INTEL_DB_SOCKET', env_first_or_default(['EREBUS_PERMISSION_INTEL_DB_SOCKET', 'PERMISSION_INTEL_DB_SOCKET'], DB_SOCKET));
 
 function db_primary_catalog_name(): string
 {

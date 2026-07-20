@@ -30,18 +30,21 @@ For Apache/PHP-FPM deployments, do not rely on a developer shell `~/.my.cnf`:
 the web-server user usually cannot read it. Use a repo-local `.env` copied from
 `.env.example`, or provide equivalent process-level env vars.
 
-The web app treats `DB_NAME` as the primary Erebus catalog and can optionally
-read Permission Intel tables from a separate catalog with `PERMISSION_INTEL_DB_NAME`.
+The web app and Erebus Engine share the canonical `EREBUS_DB_*` configuration
+names. The web app can optionally read Permission Intel tables from a separate
+catalog with `EREBUS_PERMISSION_INTEL_DB_NAME`. Legacy `DB_*` and
+`PERMISSION_INTEL_DB_*` names remain accepted for existing Web-only hosts, but
+the canonical names take precedence when both are present.
 
 **Required DB env vars (example):**
 
 ```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=erebus_threat_intel_prod
-DB_USER=root
-DB_PASS=your_password
-PERMISSION_INTEL_DB_NAME=android_permission_intel
+EREBUS_DB_HOST=127.0.0.1
+EREBUS_DB_PORT=3306
+EREBUS_DB_NAME=erebus_threat_intel_prod
+EREBUS_DB_USER=erebus_web
+EREBUS_DB_PASSWORD=your_password
+EREBUS_PERMISSION_INTEL_DB_NAME=android_permission_intel
 ```
 
 Copy `.env.example` to `.env` for local/server deployment, or use

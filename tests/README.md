@@ -7,6 +7,7 @@ Run contract checks against a running app instance:
 ```sh
 BASE_URL=http://localhost/erebus-web/public php tests/api/health_contract.php
 php tests/api/catalog_routing_contract.php
+php tests/api/catalog_config_alias_contract.php
 BASE_URL=http://localhost/erebus-web/public php tests/api/fallback_permission_queue_contract.php
 BASE_URL=http://localhost/erebus-web/public php tests/api/permission_lov_contract.php
 BASE_URL=http://localhost/erebus-web/public php tests/api/operator_status_model_contract.php

@@ -138,9 +138,16 @@ function taxonomy_view_lightweight_payload(
             'rows' => [],
             'mismatch_pairs' => $mismatchPairs,
             'issue_inventory' => [
+                'total_rows' => (int)($scorecard['total_rows'] ?? 0),
                 'issue_kind_counts' => new stdClass(),
+                'top_catalog_labels' => [],
+                'top_signal_labels' => [],
             ],
-            'fix_action_inventory' => new stdClass(),
+            'fix_action_inventory' => [
+                'total_rows' => 0,
+                'action_counts' => new stdClass(),
+                'top_target_families' => [],
+            ],
             'decision_inventory' => [
                 'total_rows' => (int)($scorecard['total_rows'] ?? 0),
                 'decision_mode_counts' => new stdClass(),
@@ -161,9 +168,25 @@ function taxonomy_view_lightweight_payload(
                 'platform_repair_now_counts' => new stdClass(),
             ],
             'governance_inventory' => [
+                'total_rows' => 0,
+                'targeted_rows' => 0,
+                'untargeted_rows' => 0,
+                'target_groups' => [],
+                'untargeted_pair_groups' => [],
                 'untargeted_top_signal_labels' => [],
+                'untargeted_top_catalog_labels' => [],
             ],
-            'apply_plan' => [],
+            'apply_plan' => [
+                'dry_run' => true,
+                'supported_actions' => [],
+                'plan_rows' => [],
+                'summary' => [
+                    'candidate_rows' => 0,
+                    'plan_group_count' => 0,
+                    'excluded_rows' => 0,
+                    'excluded_reasons' => new stdClass(),
+                ],
+            ],
             'repair_opportunities' => [],
             'queue_presets' => [],
             'remediation_summary' => [

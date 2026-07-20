@@ -16,6 +16,8 @@ $systemControl = is_array($healthLight['system_control'] ?? null) ? $healthLight
 $metrics = is_array($healthLight['metrics'] ?? null) ? $healthLight['metrics'] : [];
 $catalogs = is_array($healthLight['catalogs'] ?? null) ? $healthLight['catalogs'] : [];
 $schemaHeads = is_array($healthLight['schema_heads'] ?? null) ? $healthLight['schema_heads'] : [];
+$dbConfig = is_array($healthLight['db_config'] ?? null) ? $healthLight['db_config'] : [];
+$configurationContract = is_array($dbConfig['configuration_contract'] ?? null) ? $dbConfig['configuration_contract'] : [];
 $vtKeyStatus = db_vt_key_status_snapshot();
 $vtKeyPosture = is_array($vtKeyStatus['key_posture'] ?? null) ? $vtKeyStatus['key_posture'] : [];
 $vtHold = is_array($vtKeyStatus['hold'] ?? null) ? $vtKeyStatus['hold'] : [];
@@ -73,6 +75,13 @@ $reasonBreakdown = is_array($metrics['reason_breakdown'] ?? null) ? $metrics['re
 $headsMatch = (bool)($schemaHeads['heads_match'] ?? false);
 $primaryHead = (string)($schemaHeads['primary_head'] ?? '');
 $permissionIntelHead = (string)($schemaHeads['permission_intel_head'] ?? '');
+$configurationState = (string)($configurationContract['state'] ?? 'unknown');
+$configurationHint = match ($configurationState) {
+    'canonical' => 'Canonical EREBUS_* configuration.',
+    'legacy_compatibility' => 'Legacy DB_* aliases are active; migrate the receiver to EREBUS_* names.',
+    'mixed_precedence' => 'Canonical names override legacy aliases; remove duplicate legacy settings.',
+    default => 'No explicit DB environment keys detected; configure the receiver before use.',
+};
 
 $pipelineSnapshot = is_array($healthLight['pipeline'] ?? null) ? $healthLight['pipeline'] : [];
 $pipelineCore = is_array($pipelineSnapshot['pipeline'] ?? null) ? $pipelineSnapshot['pipeline'] : [];
@@ -181,7 +190,7 @@ $ingestBacklogUrl = page_url('ingest_backlog');
             <div class="detail-card-title">Catalog split</div>
             <div class="detail-value"><?= h($headsMatch ? 'Aligned' : 'Diverged') ?></div>
             <div class="muted" style="margin-top:8px;">
-                <?= h('Primary head ' . ($primaryHead !== '' ? $primaryHead : '--') . ' | PI head ' . ($permissionIntelHead !== '' ? $permissionIntelHead : '--')) ?>
+                <?= h('Primary head ' . ($primaryHead !== '' ? $primaryHead : '--') . ' | PI head ' . ($permissionIntelHead !== '' ? $permissionIntelHead : '--') . ' | Config: ' . $configurationState . '. ' . $configurationHint) ?>
             </div>
         </div>
     </div>
@@ -313,7 +322,7 @@ $ingestBacklogUrl = page_url('ingest_backlog');
                 <?php else: ?>
                     <?php foreach ($vtKeys as $row): ?>
                         <tr>
-                            <td><?= h('#' . $fmtValue($row['api_key_id'] ?? null) . ' • ' . $fmtValue($row['last6'] ?? null)) ?></td>
+                            <td><?= h('#' . $fmtValue($row['api_key_id'] ?? null)) ?></td>
                             <td><?= h($fmtKeyStatus($row['operator_status'] ?? null)) ?></td>
                             <td><?= h($fmtInt($row['remaining_quota'] ?? null)) ?></td>
                             <td><?= h($fmtUtcCompact($row['cooldown_until_utc'] ?? null)) ?></td>

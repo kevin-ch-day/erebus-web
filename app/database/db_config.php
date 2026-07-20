@@ -134,63 +134,70 @@ function mysql_client_defaults(): array
     return $defaults;
 }
 
-function db_env_files_loaded(): array
+function db_config_present_environment_keys(array $keys): array
 {
-    $loaded = $GLOBALS['EREBUS_WEB_DB_ENV_FILES_LOADED'] ?? [];
-    return is_array($loaded) ? array_values($loaded) : [];
+    $present = [];
+    foreach ($keys as $key) {
+        $value = getenv($key);
+        if ($value !== false && $value !== '') {
+            $present[] = $key;
+        }
+    }
+    return $present;
 }
 
-function db_config_diagnostics(): array
+function db_config_contract_summary(): array
 {
-    $envKeys = [
+    $canonical = db_config_present_environment_keys([
         'EREBUS_DB_HOST',
         'EREBUS_DB_PORT',
         'EREBUS_DB_NAME',
         'EREBUS_DB_USER',
         'EREBUS_DB_PASSWORD',
         'EREBUS_DB_SOCKET',
+        'EREBUS_PERMISSION_INTEL_DB_NAME',
+        'EREBUS_PERMISSION_INTEL_DB_HOST',
+        'EREBUS_PERMISSION_INTEL_DB_PORT',
+        'EREBUS_PERMISSION_INTEL_DB_USER',
+        'EREBUS_PERMISSION_INTEL_DB_PASSWORD',
+        'EREBUS_PERMISSION_INTEL_DB_SOCKET',
+    ]);
+    $legacy = db_config_present_environment_keys([
         'DB_HOST',
         'DB_PORT',
         'DB_NAME',
         'DB_USER',
         'DB_PASS',
         'DB_SOCKET',
-        'EREBUS_PERMISSION_INTEL_DB_NAME',
-        'ANDROID_PERMISSION_INTEL_DB_NAME',
         'PERMISSION_INTEL_DB_NAME',
-        'EREBUS_PERMISSION_INTEL_DB_HOST',
-        'EREBUS_PERMISSION_INTEL_DB_PORT',
-        'EREBUS_PERMISSION_INTEL_DB_USER',
-        'EREBUS_PERMISSION_INTEL_DB_PASSWORD',
-        'EREBUS_PERMISSION_INTEL_DB_SOCKET',
         'PERMISSION_INTEL_DB_HOST',
         'PERMISSION_INTEL_DB_PORT',
         'PERMISSION_INTEL_DB_USER',
         'PERMISSION_INTEL_DB_PASS',
         'PERMISSION_INTEL_DB_SOCKET',
-    ];
+        'ANDROID_PERMISSION_INTEL_DB_NAME',
+    ]);
 
-    $present = [];
-    foreach ($envKeys as $key) {
-        $value = getenv($key);
-        if ($value !== false && $value !== '') {
-            $present[] = $key;
-        }
-    }
-
-    $mysqlDefaults = mysql_client_defaults();
+    $state = $canonical !== []
+        ? ($legacy !== [] ? 'mixed_precedence' : 'canonical')
+        : ($legacy !== [] ? 'legacy_compatibility' : 'defaults_only');
 
     return [
+        'state' => $state,
+        'canonical_keys_present' => $canonical,
+        'legacy_alias_keys_present' => $legacy,
+    ];
+}
+
+// Public health responses may use this; never add connection values or local paths.
+function db_config_diagnostics(): array
+{
+    return [
         'app_env' => defined('APP_ENV') ? (string)APP_ENV : '',
-        'env_files_loaded' => db_env_files_loaded(),
-        'env_keys_present' => $present,
-        'mysql_client_defaults_present' => array_values(array_keys($mysqlDefaults)),
+        'configuration_contract' => db_config_contract_summary(),
         'primary_catalog' => db_primary_catalog_name(),
         'permission_intel_catalog' => db_permission_intel_catalog_name(),
         'split_enabled' => db_permission_intel_split_enabled(),
-        'primary_host' => (string)DB_HOST,
-        'primary_port' => (int)DB_PORT,
-        'primary_user' => (string)DB_USER,
         'socket_configured' => ((string)DB_SOCKET !== ''),
         'permission_intel_connection_matches_primary' => db_permission_intel_connection_matches_primary(),
     ];

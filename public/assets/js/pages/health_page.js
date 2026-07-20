@@ -62,7 +62,7 @@
         return String(value);
       }, pipelineNextPath = function(pipeline) {
         return pipelineEngineHint(pipeline);
-      }, renderBlockers = function(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt, pipeline) {
+      }, renderBlockers = function(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, configContract, workflowDebt, pipeline) {
         if (!blockersGridEl) return;
         const pendingLike = Number(metrics.retry_wait_count ?? 0) + Number(metrics.processing_now ?? 0);
         const queuePending = Number(pipeline?.pipeline?.queue_pending ?? 0);
@@ -74,6 +74,9 @@
         const schemaSplit = schemaHeads?.heads_match ? "Aligned" : "Diverged";
         const primaryHead = fmt(schemaHeads?.primary_head, "--");
         const piHead = fmt(schemaHeads?.permission_intel_head, "--");
+        const configState = fmt(configContract?.state, "unknown");
+        const configCleanupNeeded = ["legacy_compatibility", "mixed_precedence", "defaults_only"].includes(configState);
+        const configHint = configState === "canonical" ? "Canonical EREBUS_* configuration." : configState === "legacy_compatibility" ? "Legacy DB_* aliases are active; migrate the receiver to EREBUS_* names." : configState === "mixed_precedence" ? "Canonical names override legacy aliases; remove duplicate legacy settings." : "No explicit DB environment keys detected; configure the receiver before use.";
         const hasWorkflowDebt = asRows(workflowDebt?.deprecated_live_triage_statuses).length > 0 || asRows(workflowDebt?.unexpected_live_triage_statuses).length > 0 || asRows(workflowDebt?.legacy_queue_actions_active).length > 0;
         const cards = [
           {
@@ -111,8 +114,8 @@
           {
             title: "Catalog split",
             value: schemaSplit,
-            tone: schemaHeads?.heads_match ? "ok" : "warn",
-            body: `Primary head ${esc(primaryHead)} | PI head ${esc(piHead)}${hasWorkflowDebt ? " | workflow debt visible" : ""}`,
+            tone: schemaHeads?.heads_match && !configCleanupNeeded ? "ok" : "warn",
+            body: `Primary head ${esc(primaryHead)} | PI head ${esc(piHead)} | Config: ${esc(configState)}. ${esc(configHint)}${hasWorkflowDebt ? " Workflow debt visible." : ""}`,
             actionHref: permissionsOverviewUrl,
             actionLabel: "Open Permission Overview"
           }
@@ -399,6 +402,7 @@
           renderReasons(asRows(metrics.reason_breakdown));
           const catalogs = toRecord(data.catalogs);
           const schemaHeads = toRecord(data.schema_heads);
+          const configContract = toRecord(toRecord(data.db_config).configuration_contract);
           const familySummary = toRecord(data.family_taxonomy_summary);
           renderCatalogs(catalogs);
           renderSchemaHeads(schemaHeads);
@@ -411,7 +415,7 @@
           const workflowDebt = toRecord(data.workflow_debt);
           const pipeline = asPipelineSnapshot(data.pipeline);
           const hasWorkflowDebt = asRows(workflowDebt.deprecated_live_triage_statuses).length > 0 || asRows(workflowDebt.unexpected_live_triage_statuses).length > 0 || asRows(workflowDebt.legacy_queue_actions_active).length > 0;
-          renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, workflowDebt, pipeline);
+          renderBlockers(isHold, holdUntil, holdReason, metrics, familySummary, schemaHeads, configContract, workflowDebt, pipeline);
           const enginePath = pipelineNextPath(pipeline);
           if (enginePath) {
             const tone = String(pipeline?.recommendation?.action || "") === "wait_vt_blocked" ? "warn" : "info";

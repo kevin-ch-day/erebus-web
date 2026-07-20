@@ -15,13 +15,42 @@ Planned VT admin surfaces remain visible only when feature flags enable them.
 
 ## Quick start (Fedora Apache/PHP-FPM)
 
-1. Clone or copy this repo into your web root, for example:
-   - `/var/www/html/erebus-web`
-2. Ensure `httpd`, `php-fpm`, and `mariadb` are running.
-3. Set your `BASE_URL` to the `/public` directory for this repo:
-   - `BASE_URL=/erebus-web/public`
-4. Open the app:
-   - `http://127.0.0.1/erebus-web/public/`
+1. Clone the repository **outside** Apache's document root, for example:
+   - `/srv/erebus-web`
+2. Configure Apache to serve only `/srv/erebus-web/public` (for example, map
+   `/erebus-web` to that directory). Do not expose the repository root, `.git`,
+   `app/`, or `.env` through Apache.
+3. Ensure `httpd`, `php-fpm`, and `mariadb` are running.
+4. Set your `BASE_URL` to the resulting public path:
+   - `BASE_URL=/erebus-web`
+5. Open the app:
+   - `http://127.0.0.1/erebus-web/`
+
+For Fedora/SELinux deployments, ensure the web user can read `.env` without
+making it world-readable, and label only the cache directory writable by
+`httpd` (for example `storage/cache` as `httpd_sys_rw_content_t`).
+
+An Apache example is included at
+[`deploy/httpd/erebus-web.conf.example`](deploy/httpd/erebus-web.conf.example).
+After reviewing its path and URL prefix, install it as
+`/etc/httpd/conf.d/erebus-web.conf`, then label the checkout and cache on
+Fedora:
+
+```bash
+sudo semanage fcontext -a -t httpd_sys_content_t '/srv/erebus-web(/.*)?'
+sudo semanage fcontext -a -t httpd_sys_rw_content_t '/srv/erebus-web/storage/cache(/.*)?'
+sudo restorecon -Rv /srv/erebus-web
+sudo systemctl reload httpd
+```
+
+Review the existing `semanage fcontext` rules before adding them; use `-m`
+instead of `-a` if the target rule already exists.
+
+Before switching traffic to a receiver, run the read-only preflight:
+
+```bash
+bash scripts/deployment-preflight.sh
+```
 
 ## Environment configuration
 
@@ -35,6 +64,11 @@ names. The web app can optionally read Permission Intel tables from a separate
 catalog with `EREBUS_PERMISSION_INTEL_DB_NAME`. Legacy `DB_*` and
 `PERMISSION_INTEL_DB_*` names remain accepted for existing Web-only hosts, but
 the canonical names take precedence when both are present.
+
+The Health API reports this without exposing values: `canonical`,
+`legacy_compatibility`, `mixed_precedence`, or `defaults_only`. Treat
+`legacy_compatibility` and `mixed_precedence` as receiver-migration cleanup
+items; the new host should use only canonical names.
 
 **Required DB env vars (example):**
 
@@ -53,13 +87,18 @@ Copy `.env.example` to `.env` for local/server deployment, or use
 **App environment flags:**
 
 ```env
-APP_ENV=dev
-BASE_URL=/erebus-web/public
+APP_ENV=prod
+BASE_URL=/erebus-web
 FEATURE_PHASE2B_READONLY=1
 FEATURE_PHASE3_OPS=0
 ```
 
-- `APP_ENV=dev` enables verbose error output.
+`FEATURE_PHASE3_OPS=0` is enforced by every write endpoint as well as the UI.
+Keep it disabled on a receiver until its database role, access controls, and
+operator workflow have been deliberately validated.
+
+- `APP_ENV=dev` enables verbose error output; use it only for local developer
+  checkouts.
 - `APP_ENV=prod` hides stack traces and logs errors server-side.
 
 ## Required PHP extensions
@@ -127,7 +166,8 @@ mysql -u root -p erebus_threat_intel_prod < docs/erebus_database_dev.sql
 
 If you received the dump separately, place it at `docs/erebus_database_dev.sql` before importing.
 If Permission Intel is split, load the `android_permission_*` tables into
-`android_permission_intel` and set `PERMISSION_INTEL_DB_NAME=android_permission_intel`.
+`android_permission_intel` and set
+`EREBUS_PERMISSION_INTEL_DB_NAME=android_permission_intel`.
 
 ### Migrations (schema alignment)
 
@@ -142,7 +182,7 @@ mysql -u root -p android_permission_intel < docs/migrations/005_standardize_perm
 ```
 
 If you are running a unified catalog instead of split mode, run those migrations
-against `DB_NAME` instead.
+against `EREBUS_DB_NAME` instead.
 
 ## Tests
 
@@ -152,9 +192,11 @@ Run the API health contract against a running app:
 BASE_URL=http://localhost/erebus-web/public php tests/api/health_contract.php
 ```
 
-For this checkout under `/var/www/html/erebus-web`, include `/erebus-web/public`
-in `BASE_URL`. The generic `http://localhost` root will hit the wrong path unless
-you have a separate vhost mapped directly to this repo's `public/` directory.
+The current legacy checkout under `/var/www/html/erebus-web` still uses
+`/erebus-web/public` until Apache is remapped to serve only `public/`. A new
+receiver deployment following the steps above should instead use
+`/erebus-web`; the generic `http://localhost` root is correct only when a
+separate vhost maps directly to this repo's `public/` directory.
 
 ## CLI visibility helpers
 

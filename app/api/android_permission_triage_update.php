@@ -9,6 +9,7 @@ require_once __DIR__ . '/../database/db_func.php';
 
 require_post();
 require_write_access();
+require_operations_enabled();
 
 try {
     $permission = get_str('permission', 255, '', $_POST);

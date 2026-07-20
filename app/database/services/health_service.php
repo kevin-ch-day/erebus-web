@@ -131,7 +131,6 @@ function db_health(bool $includeDiagnostics = false): array
         'family_taxonomy_summary' => $familyTaxonomy,
         'schema_heads' => $schemaHeads,
         'vt_key_posture' => $vtKeyStatus['key_posture'] ?? [],
-        'vt_key_status' => $vtKeyStatus,
         'collation_guard' => $collationGuard,
         'rollup_guard' => $rollupGuard,
         'workflow_debt' => $workflowDebt,

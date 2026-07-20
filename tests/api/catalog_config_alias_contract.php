@@ -19,7 +19,7 @@ if ($configPath === false) {
 function resolve_catalog_config(string $configPath, array $environment): array
 {
     $code = sprintf(
-        'require %s; echo json_encode([DB_HOST, DB_PORT, DB_NAME, DB_USER, PERMISSION_INTEL_DB_NAME]);',
+        'require %s; echo json_encode([DB_HOST, DB_PORT, DB_NAME, DB_USER, PERMISSION_INTEL_DB_NAME, db_config_contract_summary()["state"]]);',
         var_export($configPath, true)
     );
     $pipes = [];
@@ -62,7 +62,7 @@ $cases = [
             'DB_USER' => 'legacy_user',
             'PERMISSION_INTEL_DB_NAME' => 'legacy_pi',
         ],
-        'expected' => ['canonical-host', 3307, 'canonical_primary', 'canonical_user', 'canonical_pi'],
+        'expected' => ['canonical-host', 3307, 'canonical_primary', 'canonical_user', 'canonical_pi', 'mixed_precedence'],
     ],
     'legacy aliases remain supported' => [
         'environment' => [
@@ -72,7 +72,7 @@ $cases = [
             'DB_USER' => 'legacy_user',
             'PERMISSION_INTEL_DB_NAME' => 'legacy_pi',
         ],
-        'expected' => ['legacy-host', 3308, 'legacy_primary', 'legacy_user', 'legacy_pi'],
+        'expected' => ['legacy-host', 3308, 'legacy_primary', 'legacy_user', 'legacy_pi', 'legacy_compatibility'],
     ],
 ];
 

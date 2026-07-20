@@ -10,6 +10,7 @@ require_once __DIR__ . '/../database/db_engine.php';
 
 require_post();
 require_write_access();
+require_operations_enabled();
 
 $raw = file_get_contents('php://input');
 $body = $raw !== '' ? json_decode($raw, true) : null;

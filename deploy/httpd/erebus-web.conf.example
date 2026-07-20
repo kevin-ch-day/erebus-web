@@ -1,0 +1,24 @@
+# Copy to /etc/httpd/conf.d/erebus-web.conf only after replacing the path and
+# URL prefix for this host. This file is an example; it changes no live server.
+#
+# Expected checkout: /srv/erebus-web
+# Expected public URL: http://host/erebus-web/
+
+RedirectMatch 301 ^/erebus-web$ /erebus-web/
+Alias /erebus-web/ /srv/erebus-web/public/
+
+# Deny the checkout by default. This protects .env, .git, app/, logs/, and
+# storage/ even if a later alias or virtual-host setting is too broad.
+<Directory /srv/erebus-web>
+    AllowOverride None
+    Options -Indexes
+    Require all denied
+</Directory>
+
+# The only web-readable tree.
+<Directory /srv/erebus-web/public>
+    AllowOverride None
+    Options -Indexes +FollowSymLinks
+    DirectoryIndex index.php
+    Require all granted
+</Directory>

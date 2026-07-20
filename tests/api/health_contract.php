@@ -83,6 +83,20 @@ if ($response === false) {
             }
         }
 
+        $dbConfig = is_array($data['db_config'] ?? null) ? $data['db_config'] : [];
+        $configurationContract = is_array($dbConfig['configuration_contract'] ?? null) ? $dbConfig['configuration_contract'] : [];
+        if (!array_key_exists('state', $configurationContract)) {
+            $errors[] = 'Missing health.db_config.configuration_contract.state.';
+        }
+        foreach (['env_files_loaded', 'env_keys_present', 'mysql_client_defaults_present', 'primary_host', 'primary_port', 'primary_user'] as $privateKey) {
+            if (array_key_exists($privateKey, $dbConfig)) {
+                $errors[] = sprintf('Health db_config must not expose %s.', $privateKey);
+            }
+        }
+        if (array_key_exists('vt_key_status', $data)) {
+            $errors[] = 'Health payload must not expose per-key VT status.';
+        }
+
         if (array_key_exists('schema_heads', $data) && !is_array($data['schema_heads'])) {
             $errors[] = 'Expected data.schema_heads to be an object.';
         } elseif (array_key_exists('schema_heads', $data)) {

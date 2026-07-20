@@ -8,6 +8,7 @@ require_once __DIR__ . '/../database/db_func.php';
 
 require_post();
 require_write_access();
+require_operations_enabled();
 
 try {
     $sampleId = get_int('sample_id', 0, 1, 2147483647, $_POST);

@@ -140,6 +140,20 @@ function require_write_access(): void
 }
 
 /**
+ * Keep disabled operator features disabled at the API boundary as well as in
+ * the UI. Call this after require_write_access() on every mutation endpoint.
+ */
+function require_operations_enabled(): void
+{
+    if (defined('FEATURE_PHASE3_OPS') && FEATURE_PHASE3_OPS) {
+        return;
+    }
+
+    api_error('Write operations are disabled.', 403, 'ERR_WRITE_DISABLED');
+    exit;
+}
+
+/**
  * Emit a JSON success payload.
  */
 function json_ok(array $payload = []): void

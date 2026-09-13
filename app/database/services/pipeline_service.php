@@ -386,7 +386,6 @@ function db_pipeline_status_fetch_engine_api(): ?array
     }
 
     $decoded['source'] = 'engine_api';
-    $decoded['ok'] = true;
     return $decoded;
 }
 

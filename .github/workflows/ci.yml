@@ -8,6 +8,30 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: erebus_web_ci
+          MARIADB_USER: erebus_web_ci
+          MARIADB_PASSWORD: erebus_web_ci_password
+          MARIADB_ROOT_PASSWORD: erebus_web_ci_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      APP_ENV: test
+      EREBUS_DB_HOST: 127.0.0.1
+      EREBUS_DB_PORT: "3306"
+      EREBUS_DB_NAME: erebus_web_ci
+      EREBUS_DB_USER: erebus_web_ci
+      EREBUS_DB_PASSWORD: erebus_web_ci_password
+      EREBUS_ENGINE_API_URL: http://127.0.0.1:45342
+      EXPECT_ENGINE_SOURCE: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -25,8 +49,43 @@ jobs:
       - name: API contract tests (PHP built-in server)
         run: |
           sudo apt-get update
-          sudo apt-get install -y php-cli php-json
+          sudo apt-get install -y mariadb-client php-cli php-json php-mysql
+          MYSQL_PWD="$EREBUS_DB_PASSWORD" mariadb \
+            --protocol=tcp \
+            --host="$EREBUS_DB_HOST" \
+            --port="$EREBUS_DB_PORT" \
+            --user="$EREBUS_DB_USER" \
+            "$EREBUS_DB_NAME" < tests/fixtures/pipeline_activity_schema.sql
+
+          php -S 127.0.0.1:45342 tests/fixtures/engine_api_router.php \
+            >/tmp/erebus-engine-fixture.log 2>&1 &
+          engine_pid=$!
           php -S 127.0.0.1:8080 -t public >/tmp/erebus-php.log 2>&1 &
-          sleep 2
+          web_pid=$!
+          trap 'kill "$engine_pid" "$web_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent --show-error \
+              http://127.0.0.1:45342/api/v1/pipeline/status >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              cat /tmp/erebus-engine-fixture.log
+              exit 1
+            fi
+            sleep 0.25
+          done
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent --show-error \
+              http://127.0.0.1:8080/api.php/pipeline_status.php >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              cat /tmp/erebus-php.log
+              exit 1
+            fi
+            sleep 0.25
+          done
+
           BASE_URL=http://127.0.0.1:8080 php tests/api/pipeline_status_contract.php
           BASE_URL=http://127.0.0.1:8080 php tests/api/pipeline_activity_contract.php

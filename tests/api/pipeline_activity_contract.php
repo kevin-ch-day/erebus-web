@@ -27,6 +27,14 @@ if ($response === false) {
                 $errors[] = sprintf('Missing pipeline activity key: %s', $key);
             }
         }
+
+        $pipeline = is_array($data['pipeline'] ?? null) ? $data['pipeline'] : [];
+        if (
+            filter_var(getenv('EXPECT_ENGINE_SOURCE') ?: 'false', FILTER_VALIDATE_BOOLEAN)
+            && ($pipeline['source'] ?? null) !== 'engine_api'
+        ) {
+            $errors[] = 'Pipeline activity fixture did not reach the engine API path.';
+        }
     }
 }
 

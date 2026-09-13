@@ -50,6 +50,13 @@ if ($response === false) {
                 $errors[] = sprintf('Missing pipeline.recommendation key: %s', $key);
             }
         }
+
+        if (
+            filter_var(getenv('EXPECT_ENGINE_SOURCE') ?: 'false', FILTER_VALIDATE_BOOLEAN)
+            && ($data['source'] ?? null) !== 'engine_api'
+        ) {
+            $errors[] = 'Pipeline fixture did not reach the engine API path.';
+        }
     }
 }
 

@@ -156,33 +156,21 @@ See:
 - `frontend/README.md`
 - `docs/system_architecture_synthesis.md`
 
-## Database import
+## Database setup
 
-Import the primary catalog into your local DB:
+Erebus Web consumes the current Erebus primary and Permission Intel catalogs;
+it does not own their schema. Set `EREBUS_DB_NAME` to the reviewed primary
+catalog and, in split mode, set `EREBUS_PERMISSION_INTEL_DB_NAME` to the reviewed
+PI catalog. Use a dedicated SELECT-only account for an initial deployment.
 
-```bash
-mysql -u root -p erebus_threat_intel_prod < docs/erebus_database_dev.sql
-```
-
-If you received the dump separately, place it at `docs/erebus_database_dev.sql` before importing.
-If Permission Intel is split, load the `android_permission_*` tables into
-`android_permission_intel` and set
-`EREBUS_PERMISSION_INTEL_DB_NAME=android_permission_intel`.
-
-### Migrations (schema alignment)
-
-Apply migrations in order to ensure queue/audit tables and indexes exist:
-
-```bash
-mysql -u root -p android_permission_intel < docs/migrations/001_create_permission_queue.sql
-mysql -u root -p android_permission_intel < docs/migrations/002_create_triage_audit.sql
-mysql -u root -p android_permission_intel < docs/migrations/003_add_indexes.sql
-mysql -u root -p android_permission_intel < docs/migrations/004_align_permission_queue_schema.sql
-mysql -u root -p android_permission_intel < docs/migrations/005_standardize_permission_collations.sql
-```
-
-If you are running a unified catalog instead of split mode, run those migrations
-against `EREBUS_DB_NAME` instead.
+Do **not** import `docs/erebus_database_dev.sql` into a production catalog or
+run the historical SQL in `docs/migrations/` against current primary/PI
+databases. In particular, `005_standardize_permission_collations.sql` predates
+the current exact-token governance and is not a safe automatic repair. New-host
+data restoration belongs to Mercury's verified backup/restore workflow; schema
+changes belong to the reviewed Erebus migration process. For disposable local
+testing, use an explicitly named test catalog and validate its source backup
+and schema contract before connecting the web app.
 
 ## Tests
 

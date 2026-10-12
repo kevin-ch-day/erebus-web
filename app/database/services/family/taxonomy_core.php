@@ -903,6 +903,14 @@ function db_family_taxonomy_sql_exact_hold_signal_expr(string $signalExpr): stri
     return 'LOWER(TRIM(COALESCE(' . $signalExpr . ", ''))) IN (" . db_family_taxonomy_sql_in_list($tokens) . ')';
 }
 
+function db_family_taxonomy_sql_authority_bucket_typed_expr(string $authorityBucketExpr): string
+{
+    // The current authority view exposes a binary-collated bucket. Make the
+    // literal's comparison collation explicit so MariaDB can prepare the query.
+    return "LOWER(TRIM(COALESCE({$authorityBucketExpr}, ''))) COLLATE utf8mb4_bin"
+        . " = 'authority_family_typed' COLLATE utf8mb4_bin";
+}
+
 function db_family_taxonomy_sql_authority_typed_hold_alignment_expr(
     string $catalogExpr,
     string $signalExpr,
@@ -921,7 +929,7 @@ function db_family_taxonomy_sql_authority_typed_hold_alignment_expr(
     }
 
     return "(
-        LOWER(TRIM(COALESCE({$authorityBucketExpr}, ''))) = 'authority_family_typed'
+        " . db_family_taxonomy_sql_authority_bucket_typed_expr($authorityBucketExpr) . "
         AND {$familyMatchExpr}
         AND " . db_family_taxonomy_sql_exact_hold_signal_expr($signalExpr) . '
     )';
@@ -946,7 +954,7 @@ function db_family_taxonomy_sql_authority_typed_alias_expr(
                 . ')';
         }
         $clauses[] = "(
-            LOWER(TRIM(COALESCE({$authorityBucketExpr}, ''))) = 'authority_family_typed'
+            " . db_family_taxonomy_sql_authority_bucket_typed_expr($authorityBucketExpr) . "
             AND LOWER(TRIM(COALESCE({$signalExpr}, ''))) = '{$signalSql}'
             AND {$familyMatchExpr}
         )";
@@ -977,7 +985,7 @@ function db_family_taxonomy_sql_authority_typed_secondary_alias_expr(
                 . ')';
         }
         $clauses[] = "(
-            LOWER(TRIM(COALESCE({$authorityBucketExpr}, ''))) = 'authority_family_typed'
+            " . db_family_taxonomy_sql_authority_bucket_typed_expr($authorityBucketExpr) . "
             AND LOWER(COALESCE({$vtLabelExpr}, '')) REGEXP '(^|[^a-z0-9]){$signalSql}([^a-z0-9]|$)'
             AND {$familyMatchExpr}
         )";
@@ -999,7 +1007,7 @@ function db_family_taxonomy_sql_authority_typed_secondary_alias_expr(
                     . ')';
             }
             $clauses[] = "(
-                LOWER(TRIM(COALESCE({$authorityBucketExpr}, ''))) = 'authority_family_typed'
+            " . db_family_taxonomy_sql_authority_bucket_typed_expr($authorityBucketExpr) . "
                 AND LOWER(COALESCE({$vtLabelExpr}, '')) REGEXP '(^|[^a-z0-9]){$signalSql}([^a-z0-9]|$)'
                 AND {$familyMatchExpr}
             )";
